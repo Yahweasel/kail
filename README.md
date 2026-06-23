@@ -1,7 +1,9 @@
 KAIL (Keep AI Local, pronounced like Kyle or like kale) is an AI chat system for
-people who like to tinker with AI rather than just use it. It allows a high
-level of control. It's intended only for local use and has no provision for
-accounts, sharing, etc. All data is stored in the browser.
+people who like to tinker with AI rather than just use it, and people who think
+of AI as autocomplete on steroids (i.e., what it is) rather than a
+proto-intelligence. It allows a high level of control. It's intended only for
+local use and has no provision for accounts, sharing, etc. All data is stored
+in the browser.
 
 One of the author's mottos with respect to AI is “always gaslight AI”. Thus,
 part of the design of KAIL is to allow the user to change history, inject AI
