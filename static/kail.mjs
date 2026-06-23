@@ -1620,7 +1620,23 @@ const settings = {
     btn2: gebi("settings-btn2"),
     overlay: gebi("settings-overlay"),
     close: gebi("settings-close-btn"),
-    model: gebi("model-select")
+    toolsSeg: gebi("cfg-tools"),
+    /**
+     * Model to use.
+     */
+    model: gebi("model-select"),
+    /**
+     * Force the model to set a name.
+     */
+    forceName: gebi("cfg-force-name"),
+    /**
+     * Other request parameters.
+     */
+    reqParams: gebi("cfg-req-parameters"),
+    /**
+     * Tools enabled by default?
+     */
+    toolsEnabled: gebi("cfg-tools-enabled"),
 };
 /**
  * The conversation currently visible in the UI.
@@ -1832,7 +1848,10 @@ function setCurrentConversation(conv) {
     let name = conv.name || (conv.id + "");
     if (!conv.name && name === "-1")
         name = "New chat";
+    currentChatTitle.classList.remove("editing");
+    currentChatTitle.contentEditable = "false";
     currentChatTitle.innerText = name;
+    inputMessage.select();
 }
 // Collapsible trigger
 function toggleCollapsible(ev) {
@@ -1892,6 +1911,37 @@ settings.btn1.onclick = openSettings;
 settings.btn2.onclick = openSettings;
 settings.overlay.onclick = closeSettings;
 settings.close.onclick = closeSettingsDirect;
+// Allow the user to edit the chat name
+currentChatTitle.onclick = () => {
+    if (currentChatTitle.classList.contains("editing"))
+        return;
+    currentChatTitle.classList.add("editing");
+    currentChatTitle.contentEditable = "true";
+    currentChatTitle.focus();
+    const range = document.createRange();
+    range.selectNodeContents(currentChatTitle);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+};
+currentChatTitle.onkeydown = ev => {
+    if (ev.key === "Enter") {
+        ev.preventDefault();
+        currentChatTitle.blur();
+    }
+};
+currentChatTitle.onblur = () => {
+    if (!currentChatTitle.classList.contains("editing"))
+        return;
+    currentChatTitle.classList.remove("editing");
+    currentChatTitle.contentEditable = "false";
+    const title = currentChatTitle.textContent.trim();
+    if (title)
+        currentConversation.name = title;
+    else
+        delete currentConversation.name;
+    dispatch("conversation.name", { conv: currentConversation });
+};
 // Escape is the ultimate closer
 document.body.onkeydown = ev => {
     if (ev.key === "Escape") {
@@ -2056,6 +2106,8 @@ async function convPush(conv, msg) {
     if (conv.id < 0) {
         conv.id = ++maxConversationId;
         conversations[conv.id] = conv;
+        if (currentConversation === conv)
+            currentChatTitle.innerText = conv.name || (conv.id + "");
         const btn = await convListPush(conv);
         for (const chat of chatList.children)
             chat.classList.remove("active");
@@ -2099,20 +2151,69 @@ for (const model of models) {
     opt.innerText = model;
     settings.model.appendChild(opt);
 }
+// Generic settings saving
+async function settingValue(el, save) {
+    el.addEventListener("change", () => {
+        lf.setItem(`settings-${save}`, el.value);
+    });
+    const saved = await lf.getItem(`settings-${save}`);
+    if (typeof saved === "string")
+        el.value = saved;
+}
+async function settingCheckbox(el, save) {
+    el.addEventListener("change", () => {
+        lf.setItem(`settings-${save}`, el.checked);
+    });
+    const saved = await lf.getItem(`settings-${save}`);
+    if (typeof saved === "boolean")
+        el.checked = saved;
+}
 // Model saving
 async function onModelChange() {
     modelBadge.innerText = settings.model.value;
     await lf.setItem("settings-model", settings.model.value);
 }
+await settingValue(settings.model, "model");
 settings.model.onchange = onModelChange;
-{
-    const savedModel = await lf.getItem("settings-model");
-    if (typeof savedModel === "string")
-        settings.model.value = savedModel;
-    if (!settings.model.value)
-        settings.model.value = models[0];
-}
+if (!settings.model.value)
+    settings.model.value = models[0];
 onModelChange();
+// Other settings
+await settingCheckbox(settings.forceName, "force-name");
+await settingValue(settings.reqParams, "req-parameters");
+await settingCheckbox(settings.toolsEnabled, "tools-enabled");
+// Add a toggle for a tool
+async function settingAddTool(tool) {
+    const box = dce("div");
+    box.className = "settings-row";
+    box.innerHTML = `
+        <div class="settings-row-info">
+            <div class="settings-row-label">${tool.name.replace(/[^a-zA-Z0-9_-]/g, "_")}</div>
+        </div>
+        <label class="toggle">
+            <input type="checkbox" ${settings.toolsEnabled.checked ? "checked " : ""}/>
+            <span class="toggle-slider"></span>
+        </label>
+    `;
+    settings.toolsSeg.appendChild(box);
+    const el = box.children[1].children[0];
+    await settingCheckbox(el, `tool-enabled-${tool.name}`);
+    el.onchange = () => {
+        tool.enabled = el.checked;
+    };
+    tool.enabled = el.checked;
+    events.addEventListener("tools-enabled-default", () => {
+        el.checked = settings.toolsEnabled.checked;
+        el.dispatchEvent(new Event("change"));
+    });
+}
+events.addEventListener("register-tool", (ev) => {
+    settingAddTool(ev.detail.tool);
+});
+// Change all tools when the default is changed
+settings.toolsEnabled.onchange = () => {
+    dispatch("tools-enabled-default", null);
+};
 
 /*
  * Copyright (c) 2026 Yahweasel
@@ -2139,6 +2240,7 @@ const tools = Object.create(null);
  */
 function registerTool(tool) {
     tools[tool.name] = tool;
+    dispatch("register-tool", { tool });
 }
 /**
  * Create a simple tool function for a tool handled by the server.
@@ -2445,11 +2547,14 @@ async function completeAssistant(conv) {
         const req = {
             model: settings.model.value,
             stream: true,
-            //thinking_budget_tokens: 0,
             messages: conv.messages, //await cacheConversation(conv.messages),
             tools: Object.values(tools).filter(x => x.enabled).map(x => x.schema)
         };
-        if (!conv.name) {
+        // Force naming
+        if (!conv.name &&
+            settings.forceName.checked &&
+            tools["set_chat_name"] &&
+            tools["set_chat_name"].enabled) {
             // Force the AI to set a chat title first
             req.tool_choice = "required";
             if (conv.messages.findIndex(x => x.role === "assistant") >= 0) {
@@ -2458,6 +2563,12 @@ async function completeAssistant(conv) {
                 req.tools = req.tools.filter((x) => x.function.name === "set_chat_name");
                 req.thinking_budget_tokens = 0;
             }
+        }
+        // Other request parameters
+        {
+            const reqParams = settings.reqParams.value.trim();
+            if (reqParams)
+                Object.assign(req, JSON.parse(reqParams));
         }
         // Prepare for stopping
         const abortC = new AbortController();
@@ -2986,12 +3097,9 @@ async function set_chat_name(chat, args) {
     const obj = JSON.parse(args);
     chat.name = obj.name;
     dispatch("conversation.name", { conv: chat });
-    const btn = conversationButtons[chat.id];
-    if (btn)
-        btn.title.innerText = btn.title.title = obj.name;
     return "";
 }
-tools.set_chat_name = {
+registerTool({
     name: "set_chat_name",
     enabled: true,
     function: set_chat_name,
@@ -3013,7 +3121,7 @@ tools.set_chat_name = {
             strict: true
         }
     }
-};
+});
 
 /*!
  * Copyright (c) 2026 Yahweasel
