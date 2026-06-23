@@ -1,0 +1,4 @@
+{
+    "//host": "Host for comfy-api-wrapper (NOT ComfyUI itself)",
+    "host": "http://localhost:8187"
+}

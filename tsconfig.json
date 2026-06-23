@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "target": "es2017",
+        "module": "es2022",
+        "moduleResolution": "bundler",
+        "types": ["node"],
+        "lib": ["es2016", "dom"],
+        "allowSyntheticDefaultImports": true
+    }
+}

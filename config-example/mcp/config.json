@@ -1,0 +1,9 @@
+{
+    "//mcpServers": "Servers to connect to to find MCP tools. Each key (e.g. ddg-search in this example) must be a valid URL component (no slash). The MCP configuration itself is standard MCP.",
+    "mcpServers": {
+        "ddg-search": {
+            "command": "uvx",
+            "args": ["duckduckgo-mcp-server"]
+        }
+    }
+}

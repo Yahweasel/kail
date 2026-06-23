@@ -1,0 +1,237 @@
+{
+    "type": "image-generation",
+
+    "model": {
+        "name": "flux2klein4b",
+        "megapixels": 1.0,
+        "default_width": 1024,
+        "default_height": 1024,
+        "vae_scale": 16
+    },
+
+    "properties": {
+        "prompt": "76.inputs.value",
+        "width": "98.inputs.value",
+        "height": "99.inputs.value",
+        "seed": "100.inputs.noise_seed",
+        "output": "78"
+    },
+
+"workflow": {
+  "76": {
+    "inputs": {
+      "value": "A hedgehog wearing a tiny party hat surrounded by confetti, early digital camera style, slight noise, flash photography, candid moment, 2000s digicam aesthetic, festive birthday celebration atmosphere\n"
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Prompt"
+    }
+  },
+  "78": {
+    "inputs": {
+      "filename_prefix": "Flux2-Klein",
+      "images": [
+        "96",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "94": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "95": {
+    "inputs": {
+      "noise": [
+        "100",
+        0
+      ],
+      "guider": [
+        "104",
+        0
+      ],
+      "sampler": [
+        "94",
+        0
+      ],
+      "sigmas": [
+        "107",
+        0
+      ],
+      "latent_image": [
+        "97",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "96": {
+    "inputs": {
+      "samples": [
+        "95",
+        0
+      ],
+      "vae": [
+        "103",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "97": {
+    "inputs": {
+      "width": [
+        "98",
+        0
+      ],
+      "height": [
+        "99",
+        0
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage",
+    "_meta": {
+      "title": "Empty Flux 2 Latent"
+    }
+  },
+  "98": {
+    "inputs": {
+      "value": 1024
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Width"
+    }
+  },
+  "99": {
+    "inputs": {
+      "value": 1024
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Height"
+    }
+  },
+  "100": {
+    "inputs": {
+      "noise_seed": 1
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "RandomNoise"
+    }
+  },
+  "101": {
+    "inputs": {
+      "unet_name": "flux-2-klein-4b.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "102": {
+    "inputs": {
+      "clip_name": "qwen_3_4b.safetensors",
+      "type": "flux2",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "103": {
+    "inputs": {
+      "vae_name": "flux2-vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "104": {
+    "inputs": {
+      "cfg": 1,
+      "model": [
+        "101",
+        0
+      ],
+      "positive": [
+        "106",
+        0
+      ],
+      "negative": [
+        "105",
+        0
+      ]
+    },
+    "class_type": "CFGGuider",
+    "_meta": {
+      "title": "CFG Guider"
+    }
+  },
+  "105": {
+    "inputs": {
+      "conditioning": [
+        "106",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "ConditioningZeroOut"
+    }
+  },
+  "106": {
+    "inputs": {
+      "text": [
+        "76",
+        0
+      ],
+      "clip": [
+        "102",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "107": {
+    "inputs": {
+      "steps": 4,
+      "width": [
+        "98",
+        0
+      ],
+      "height": [
+        "99",
+        0
+      ]
+    },
+    "class_type": "Flux2Scheduler",
+    "_meta": {
+      "title": "Flux2Scheduler"
+    }
+  }
+}
+}

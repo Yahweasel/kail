@@ -1,0 +1,15 @@
+{
+    "//port": "Port to run the KAIL HTTP server",
+    "port": 8189,
+
+    "//cache": "This is currently unused and can be ignored. In development it was used to cache images to make requests smaller, but the feature didn't work well with llama.cpp and was disabled.",
+    "cache": {
+        "dir": "cache",
+        "url": "http://localhost:8189"
+    },
+
+    "//openai": "Configuration for the OpenAI API. KAIL has only been tested with llama.cpp, but should work on any OpenAI-chat-completions-compatible server.",
+    "openai": {
+        "host": "http://localhost:8000"
+    }
+}

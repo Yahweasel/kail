@@ -1,0 +1,333 @@
+{
+    "type": "image-edit-mask",
+
+    "model": {
+        "name": "flux2klein4b",
+        "megapixels": 1.0,
+        "vae_scale": 16
+    },
+
+    "properties": {
+        "input": "141.inputs.base64",
+        "mask": "143.inputs.base64",
+        "prompt": "131.inputs.text",
+        "seed": "139.inputs.noise_seed",
+        "output": "9"
+    },
+
+"workflow": {
+  "9": {
+    "inputs": {
+      "filename_prefix": "Flux2-Klein",
+      "images": [
+        "138",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "124": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "125": {
+    "inputs": {
+      "unet_name": "flux-2-klein-4b.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "126": {
+    "inputs": {
+      "clip_name": "qwen_3_4b.safetensors",
+      "type": "flux2",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "127": {
+    "inputs": {
+      "vae_name": "flux2-vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "129": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "megapixels": 1,
+      "resolution_steps": 1,
+      "image": [
+        "141",
+        0
+      ]
+    },
+    "class_type": "ImageScaleToTotalPixels",
+    "_meta": {
+      "title": "Scale Image to Total Pixels"
+    }
+  },
+  "130": {
+    "inputs": {
+      "steps": 4,
+      "width": [
+        "134",
+        0
+      ],
+      "height": [
+        "134",
+        1
+      ]
+    },
+    "class_type": "Flux2Scheduler",
+    "_meta": {
+      "title": "Flux2Scheduler"
+    }
+  },
+  "131": {
+    "inputs": {
+      "text": "Change the hat color to blue.",
+      "clip": [
+        "126",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "132": {
+    "inputs": {
+      "conditioning": [
+        "131",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "ConditioningZeroOut"
+    }
+  },
+  "133": {
+    "inputs": {
+      "conditioning": [
+        "142",
+        1
+      ],
+      "latent": [
+        "142",
+        2
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "ReferenceLatent"
+    }
+  },
+  "134": {
+    "inputs": {
+      "image": [
+        "129",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Get Image Size"
+    }
+  },
+  "135": {
+    "inputs": {
+      "conditioning": [
+        "142",
+        0
+      ],
+      "latent": [
+        "142",
+        2
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "ReferenceLatent"
+    }
+  },
+  "137": {
+    "inputs": {
+      "noise": [
+        "139",
+        0
+      ],
+      "guider": [
+        "140",
+        0
+      ],
+      "sampler": [
+        "124",
+        0
+      ],
+      "sigmas": [
+        "130",
+        0
+      ],
+      "latent_image": [
+        "142",
+        2
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "138": {
+    "inputs": {
+      "samples": [
+        "137",
+        0
+      ],
+      "vae": [
+        "127",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "139": {
+    "inputs": {
+      "noise_seed": 1
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "RandomNoise"
+    }
+  },
+  "140": {
+    "inputs": {
+      "cfg": 1,
+      "model": [
+        "125",
+        0
+      ],
+      "positive": [
+        "135",
+        0
+      ],
+      "negative": [
+        "133",
+        0
+      ]
+    },
+    "class_type": "CFGGuider",
+    "_meta": {
+      "title": "CFG Guider"
+    }
+  },
+  "141": {
+    "inputs": {
+      "image": "",
+      "filepath": "",
+      "base64": ""
+    },
+    "class_type": "ImageLoader",
+    "_meta": {
+      "title": "Image Loader (Universal)"
+    }
+  },
+  "142": {
+    "inputs": {
+      "noise_mask": true,
+      "positive": [
+        "131",
+        0
+      ],
+      "negative": [
+        "132",
+        0
+      ],
+      "vae": [
+        "127",
+        0
+      ],
+      "pixels": [
+        "129",
+        0
+      ],
+      "mask": [
+        "145",
+        0
+      ]
+    },
+    "class_type": "InpaintModelConditioning",
+    "_meta": {
+      "title": "InpaintModelConditioning"
+    }
+  },
+  "143": {
+    "inputs": {
+      "image": "",
+      "filepath": "",
+      "base64": ""
+    },
+    "class_type": "ImageLoader",
+    "_meta": {
+      "title": "Image Loader (Universal)"
+    }
+  },
+  "144": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "width": [
+        "134",
+        0
+      ],
+      "height": [
+        "134",
+        1
+      ],
+      "crop": "disabled",
+      "image": [
+        "143",
+        0
+      ]
+    },
+    "class_type": "ImageScale",
+    "_meta": {
+      "title": "Upscale Image"
+    }
+  },
+  "145": {
+    "inputs": {
+      "channel": "red",
+      "image": [
+        "144",
+        0
+      ]
+    },
+    "class_type": "ImageToMask",
+    "_meta": {
+      "title": "Convert Image to Mask"
+    }
+  }
+}
+}
