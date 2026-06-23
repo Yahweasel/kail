@@ -34,6 +34,8 @@
   --text-primary:   #e4e8f5;
   --text-secondary: #8b93b8;
   --text-muted:     #555d82;
+  --text-link:      #7274f5;
+  --text-link-hover:#72e8f5;
 
   --accent:        #5b7fff;
   --accent-dim:    #2a3a7a;
@@ -74,6 +76,18 @@ html, body {
   font-size: 14px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--text-link);
+}
+
+a:hover {
+  color: var(--text-link-hover);
+}
+
+a:visited {
+  color: var(--text-link);
 }
 
 /* ── Layout ───────────────────────────────────────────────── */
