@@ -65,11 +65,14 @@ Configure the port in `config/comfy/config.json`, and add any workflows you
 need in the `workflows` subdirectory. Workflow examples are provided for Flux.2
 Klein 4B.
 
-### JS Canvas
+Why not just use an MCP server for ComfyUI? Feel free to! But the answer is
+that the `comfy` plugin can edit images generated earlier in the conversation,
+even by other tools.
 
-The `js_canvas` plugin allows the AI to produce images by drawing on a
-JavaScript canvas. The canvas itself is implemented in a WebWorker for security
-reasons.
+### JS and Canvas
+
+The `run_js` plugin allows the AI to run JavaScript code (isolated in a
+WebWorker), as well as produce images by drawing on a JavaScript canvas.
 
 ### SVG rendering
 

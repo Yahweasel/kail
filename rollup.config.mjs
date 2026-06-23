@@ -59,7 +59,6 @@ export default [{
 },
     pluginServer("comfy"),
     plugin("comfy"),
-    plugin("js_canvas"),
 {
     input: "src/plugins/mcp_server.ts",
     external: [
@@ -75,4 +74,5 @@ export default [{
 },
     plugin("mcp"),
     plugin("render_svg"),
+    plugin("run_js"),
 ];

@@ -16,30 +16,45 @@
 
 import type * as iface from "../client/iface";
 
+// Source for the worker to run any JS code
 const workerSrc = `
+    delete globalThis.Worker;
+    delete globalThis.SharedWorker;
+    delete globalThis.fetch;
+    delete globalThis.XMLHttpRequest;
+
+    const AsyncFunction = (async function() {}).constructor;
+
     const init = await new Promise(res => {
         addEventListener("message", ev => res(ev.data));
     });
-    globalThis.canvas = init.canvas;
-    globalThis.image = function(idx) {
-        postMessage({c: "image", idx});
-        return new Promise(res => {
-            addEventListener("message", ev => res(ev.data), {once: true});
-        });
-    };
+
+    if (init.canvas) {
+        globalThis.canvas = init.canvas;
+
+        globalThis.image = function(idx) {
+            postMessage({c: "image", idx});
+            return new Promise(res => {
+                addEventListener("message", ev => res(ev.data), {once: true});
+            });
+        };
+    }
+
+    let ret = null;
     let error = null;
     try {
-        const code = encodeURIComponent(
-            "await (async () => {\\n" +
-            init.src +
-            "\\n})();\\n"
-        );
-        await import(\`data:application/javascript,\${code}\`);
+        const code = AsyncFunction(init.src);
+        ret = await code();
     } catch (ex) {
         error = ex + "";
     }
-    const img = await init.canvas.convertToBlob();
-    postMessage({c: "done", img, error});
+
+    if (init.canvas) {
+        const img = await init.canvas.convertToBlob();
+        postMessage({c: "done", img, error});
+    } else {
+        postMessage({c: "done", ret, error});
+    }
 `;
 
 // Function to send an image from this conversation to the worker
@@ -95,8 +110,8 @@ async function sendImage(w: Worker, conv: iface.Conversation, idx: number) {
         w.postMessage(image);
 }
 
-async function js_canvas(
-    conv: iface.Conversation, arg: string
+async function jsTool(
+    conv: iface.Conversation, arg: string, useCanvas: boolean
 ): Promise<string | iface.MessageContent[]> {
     const argObj = JSON.parse(arg);
 
@@ -105,59 +120,112 @@ async function js_canvas(
         `data:application/javascript,${encodeURIComponent(workerSrc)}`,
         {type: "module"}
     );
-    const wRetP = new Promise(res => {
+    const wRetP = new Promise<any>(res => {
         w.addEventListener("message", ev => {
             if (ev.data.c === "done")
                 res(ev.data);
         });
     });
 
-    // Prepare to send images back
-    w.addEventListener("message", ev => {
-        if (ev.data.c === "image")
-            sendImage(w, conv, ev.data.idx);
-    });
-
-
-    const canvas = new OffscreenCanvas(1024, 1024);
-    w.postMessage({canvas, src: argObj.src}, [canvas]);
-
-    // Wait for their response
-    const wRet = <any> await wRetP;
-    w.terminate();
-
-    // Turn the blob into a data URL
-    const rdr = new FileReader();
-    const dataP = new Promise(res => {
-        rdr.onload = () => res(rdr.result!);
-    });
-    rdr.readAsDataURL(wRet.img);
-    const data = await dataP;
-
-    // And make it into a message
-    const ret: iface.MessageContent[] = [<iface.MessageContentImage> {
-        type: "image_url",
-        image_url: {url: data}
-    }];
-
-    if (wRet.error) {
-        // The AI never understands if the image is also here
-        return `ERROR: ${wRet.error}`;
-        /*
-        ret.push(<iface.MessageContentText> {
-            type: "text",
-            text: `ERROR: ${wRet.error}`
+    if (useCanvas) {
+        // Prepare to send images back
+        w.addEventListener("message", ev => {
+            if (ev.data.c === "image")
+                sendImage(w, conv, ev.data.idx);
         });
-        */
+
+        // Start the code
+        const canvas = new OffscreenCanvas(1024, 1024);
+        w.postMessage({canvas, src: argObj.src}, [canvas]);
+
+    } else {
+        // Start the code
+        w.postMessage({src: argObj.src});
+
     }
 
-    return ret;
+    // Wait for their response
+    const wRet = await Promise.race([
+        wRetP,
+        new Promise(res => setTimeout(() => res({error: "Timeout"}), 30000))
+    ]);
+    w.terminate();
+
+    // If there was an error, that's it
+    if (wRet.error)
+        return `ERROR: ${wRet.error}`;
+
+    if (useCanvas) {
+        // Turn the blob into a data URL
+        const rdr = new FileReader();
+        const dataP = new Promise(res => {
+            rdr.onload = () => res(rdr.result!);
+        });
+        rdr.readAsDataURL(wRet.img);
+        const data = await dataP;
+
+        // And make it into a message
+        return [<iface.MessageContentImage> {
+            type: "image_url",
+            image_url: {url: data}
+        }];
+
+    } else {
+        // Just give them the returned value
+        if (typeof wRet.ret === "undefined")
+            return "undefined";
+        else
+            return JSON.stringify(wRet.ret);
+
+    }
 }
 
-const js_canvas_tool = <iface.Tool> {
+declare let KAIL: iface.KAIL;
+
+KAIL.registerTool({
+    name: "run_js",
+    enabled: true,
+    function: (conv, arg) => jsTool(conv, arg, false),
+    schema: {
+        type: "function",
+        function: {
+            name: "run_js",
+            description:
+`Run JavaScript code. The JavaScript code you provide will be run as the body of an async function, and whatever that function returns will be returned to you. You *must* return at the end of your code; you will not receive the value of the last statement, only whatever is returned.
+
+Examples:
+\`\`\`javascript
+// WRONG: Returns undefined
+let x = 21;
+x * 2;
+\`\`\`
+
+\`\`\`javascript
+// CORRECT: Returns 42
+let x = 21;
+return x * 2;
+\`\`\`
+
+Use this for both simple calculation and executing code. The sandbox the code is run in has no access to the DOM or any other modules.`,
+            parameters: {
+                type: "object",
+                properties: {
+                    src: {
+                        type: "string",
+                        description: "The JavaScript source to run. May be asynchronous (use await)."
+                    }
+                }
+            },
+            required: ["src"]
+        },
+        strict: true
+    }
+});
+
+KAIL.registerTool({
     name: "js_canvas",
     enabled: true,
-    function: js_canvas,
+    function: (conv, arg) => jsTool(conv, arg, true),
     schema: {
         type: "function",
         function: {
@@ -176,7 +244,4 @@ const js_canvas_tool = <iface.Tool> {
         },
         strict: true
     }
-};
-
-declare let KAIL: iface.KAIL;
-KAIL.registerTool(js_canvas_tool);
+});
