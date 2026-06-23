@@ -38,7 +38,9 @@ Build with `make`, `npm run build`, or `rollup -c`.
 
 KAIL has a plugin system for both server-side and client-side plugins.
 Currently, plugins can only correspond to tools, and all tools are exposed to
-the AI as generic function calls.
+the AI as generic function calls. The plugins are allowed to see the entire
+conversation history, unlike MCP, which is useful for tools to, e.g., allow
+editing previous images.
 
 You can find the relevant interface in `src/client/iface.ts` for the client,
 and `src/server/iface.ts` for the server. The interface `KAIL` is exposed
