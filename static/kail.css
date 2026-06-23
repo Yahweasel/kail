@@ -686,6 +686,17 @@ html, body {
 #empty-state h2 { font-size: 18px; font-weight: 600; color: var(--text-secondary); }
 #empty-state p  { font-size: 13px; max-width: 340px; line-height: 1.6; }
 
+/* ── Editable header title ───────────────────────────────── */
+#header-title {
+  cursor:text; border-radius:var(--radius-sm); padding:3px 6px; margin:0 -6px;
+  transition:background var(--tr);
+}
+#header-title:hover { background:var(--bg-raised); }
+#header-title.editing {
+  background:var(--bg-base); outline:1px solid var(--accent);
+  box-shadow:0 0 0 3px var(--accent-glow); cursor:text;
+}
+
 @media (max-width: 640px) {
   #sidebar { position: fixed; inset: 0 auto 0 0; z-index: 50; }
   #sidebar.collapsed { transform: translateX(-100%); width: var(--sidebar-w); opacity: 1; pointer-events: auto; }

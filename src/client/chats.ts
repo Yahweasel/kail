@@ -188,6 +188,9 @@ export async function convPush(conv: iface.Conversation, msg: iface.Message | nu
         conv.id = ++maxConversationId;
         conversations[conv.id] = conv;
 
+        if (ui.currentConversation === conv)
+            ui.currentChatTitle.innerText = conv.name || (conv.id+"");
+
         const btn = await convListPush(conv);
         for (const chat of ui.chatList.children)
             chat.classList.remove("active");

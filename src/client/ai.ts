@@ -386,12 +386,17 @@ async function completeAssistant(conv: iface.Conversation) {
         const req: any = {
             model: ui.settings.model.value,
             stream: true,
-            //thinking_budget_tokens: 0,
             messages: conv.messages, //await cacheConversation(conv.messages),
             tools: Object.values(tools).filter(x => x.enabled).map(x => x.schema)
         };
 
-        if (!conv.name) {
+        // Force naming
+        if (
+            !conv.name &&
+            ui.settings.forceName.checked &&
+            tools["set_chat_name"] &&
+            tools["set_chat_name"].enabled
+        ) {
             // Force the AI to set a chat title first
             req.tool_choice = "required";
 
@@ -403,6 +408,13 @@ async function completeAssistant(conv: iface.Conversation) {
                 );
                 req.thinking_budget_tokens = 0;
             }
+        }
+
+        // Other request parameters
+        {
+            const reqParams = ui.settings.reqParams.value.trim();
+            if (reqParams)
+                Object.assign(req, JSON.parse(reqParams));
         }
 
 

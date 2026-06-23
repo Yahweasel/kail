@@ -354,7 +354,12 @@ export function setCurrentConversation(conv: iface.Conversation) {
     let name = conv.name || (conv.id + "");
     if (!conv.name && name === "-1")
         name = "New chat";
+
+    currentChatTitle.classList.remove("editing");
+    currentChatTitle.contentEditable = "false";
     currentChatTitle.innerText = name;
+
+    inputMessage.select();
 }
 
 // Collapsible trigger
@@ -429,6 +434,42 @@ settings.btn2.onclick = openSettings;
 settings.overlay.onclick = closeSettings;
 settings.close.onclick = closeSettingsDirect;
 
+
+// Allow the user to edit the chat name
+currentChatTitle.onclick = () => {
+    if (currentChatTitle.classList.contains("editing"))
+        return;
+    currentChatTitle.classList.add("editing");
+    currentChatTitle.contentEditable = "true";
+    currentChatTitle.focus();
+    const range = document.createRange();
+    range.selectNodeContents(currentChatTitle);
+    const sel = window.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(range);
+};
+
+currentChatTitle.onkeydown = ev => {
+    if (ev.key === "Enter") {
+        ev.preventDefault();
+        currentChatTitle.blur();
+    }
+};
+
+currentChatTitle.onblur = () => {
+    if (!currentChatTitle.classList.contains("editing"))
+        return;
+    currentChatTitle.classList.remove("editing");
+    currentChatTitle.contentEditable = "false";
+
+    const title = currentChatTitle.textContent.trim();
+    if (title)
+        currentConversation.name = title;
+    else
+        delete currentConversation.name;
+
+    events.dispatch("conversation.name", {conv: currentConversation});
+};
 
 // Escape is the ultimate closer
 document.body.onkeydown = ev => {

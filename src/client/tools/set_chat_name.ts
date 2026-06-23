@@ -15,7 +15,6 @@
  */
 
 import * as ai from "../ai";
-import * as chats from "../chats";
 import * as events from "../events";
 import * as iface from "../iface";
 
@@ -23,13 +22,10 @@ async function set_chat_name(chat: iface.Conversation, args: string) {
     const obj = JSON.parse(args);
     chat.name = obj.name;
     events.dispatch("conversation.name", {conv: chat});
-    const btn = chats.conversationButtons[chat.id];
-    if (btn)
-        btn.title.innerText = btn.title.title = obj.name;
     return "";
 }
 
-ai.tools.set_chat_name = {
+ai.registerTool({
     name: "set_chat_name",
     enabled: true,
     function: set_chat_name,
@@ -51,4 +47,4 @@ ai.tools.set_chat_name = {
             strict: true
         }
     }
-};
+});
