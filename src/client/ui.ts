@@ -60,7 +60,27 @@ export const settings = {
     btn2: gebi("settings-btn2")!,
     overlay: gebi("settings-overlay")!,
     close: gebi("settings-close-btn")!,
-    model: <HTMLSelectElement> gebi("model-select")!
+    toolsSeg: gebi("cfg-tools")!,
+
+    /**
+     * Model to use.
+     */
+    model: <HTMLSelectElement> gebi("model-select")!,
+
+    /**
+     * Force the model to set a name.
+     */
+    forceName: <HTMLInputElement> gebi("cfg-force-name")!,
+
+    /**
+     * Other request parameters.
+     */
+    reqParams: <HTMLTextAreaElement> gebi("cfg-req-parameters")!,
+
+    /**
+     * Tools enabled by default?
+     */
+    toolsEnabled: <HTMLInputElement> gebi("cfg-tools-enabled")!,
 };
 
 /**

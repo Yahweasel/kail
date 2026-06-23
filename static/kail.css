@@ -505,6 +505,31 @@ html, body {
   border-radius: 50%; background: var(--accent); cursor: pointer;
 }
 
+.settings-input {
+  background:var(--bg-raised); border:1px solid var(--border); color:var(--text-primary);
+  font-family:var(--mono); font-size:12px; padding:6px 10px; border-radius:var(--radius-sm);
+  width:100px; text-align:right; outline:none; transition:border-color var(--tr);
+}
+.settings-input:focus { border-color:var(--accent); }
+.settings-input::-webkit-outer-spin-button,
+.settings-input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+.settings-input[type=number] { -moz-appearance:textfield; }
+
+/* Full-width row for textarea-style settings (label stacks above field) */
+.settings-row.stacked {
+  flex-direction:column; align-items:stretch; gap:8px;
+}
+.settings-row.stacked .settings-row-info { flex:none; }
+
+.settings-textarea {
+  width:100%; background:var(--bg-raised); border:1px solid var(--border);
+  color:var(--text-primary); font-family:var(--mono); font-size:12px; line-height:1.6;
+  padding:9px 11px; border-radius:var(--radius-md); resize:vertical;
+  min-height:72px; outline:none; transition:border-color var(--tr);
+}
+.settings-textarea:focus { border-color:var(--accent); }
+.settings-textarea::placeholder { color:var(--text-muted); }
+
 /* ── Input area ──────────────────────────────────────────── */
 #input-area { padding:12px 20px 16px; border-top:1px solid var(--border); background:var(--bg-surface); flex-shrink:0; }
 

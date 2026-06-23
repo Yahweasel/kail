@@ -239,18 +239,82 @@ for (const model of models) {
     ui.settings.model.appendChild(opt);
 }
 
+// Generic settings saving
+async function settingValue(
+    el: HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement,
+    save: string
+) {
+    el.addEventListener("change", () => {
+        lf.setItem(`settings-${save}`, el.value);
+    });
+
+    const saved = await lf.getItem(`settings-${save}`);
+    if (typeof saved === "string")
+        el.value = saved;
+}
+
+async function settingCheckbox(el: HTMLInputElement, save: string) {
+    el.addEventListener("change", () => {
+        lf.setItem(`settings-${save}`, el.checked);
+    });
+
+    const saved = await lf.getItem(`settings-${save}`);
+    if (typeof saved === "boolean")
+        el.checked = saved;
+}
+
+
 // Model saving
 async function onModelChange() {
     ui.modelBadge.innerText = ui.settings.model.value;
     await lf.setItem("settings-model", ui.settings.model.value);
 };
 
+await settingValue(ui.settings.model, "model");
 ui.settings.model.onchange = onModelChange;
-{
-    const savedModel = await lf.getItem("settings-model");
-    if (typeof savedModel === "string")
-        ui.settings.model.value = savedModel;
-    if (!ui.settings.model.value)
-        ui.settings.model.value = models[0];
-}
+if (!ui.settings.model.value)
+    ui.settings.model.value = models[0];
 onModelChange();
+
+// Other settings
+await settingCheckbox(ui.settings.forceName, "force-name");
+await settingValue(ui.settings.reqParams, "req-parameters");
+await settingCheckbox(ui.settings.toolsEnabled, "tools-enabled");
+
+
+// Add a toggle for a tool
+async function settingAddTool(tool: iface.Tool) {
+    const box = dce("div");
+    box.className = "settings-row";
+    box.innerHTML = `
+        <div class="settings-row-info">
+            <div class="settings-row-label">${tool.name.replace(/[^a-zA-Z0-9_-]/g, "_")}</div>
+        </div>
+        <label class="toggle">
+            <input type="checkbox" ${ui.settings.toolsEnabled.checked ? "checked " : ""}/>
+            <span class="toggle-slider"></span>
+        </label>
+    `;
+    ui.settings.toolsSeg.appendChild(box);
+
+    const el = <HTMLInputElement> box.children[1].children[0];
+    await settingCheckbox(el, `tool-enabled-${tool.name}`);
+    el.onchange = () => {
+        tool.enabled = el.checked;
+    };
+    tool.enabled = el.checked;
+
+    events.events.addEventListener("tools-enabled-default", () => {
+        el.checked = ui.settings.toolsEnabled.checked;
+        el.dispatchEvent(new Event("change"));
+    });
+}
+
+events.events.addEventListener("register-tool", (ev: any) => {
+    settingAddTool(ev.detail.tool);
+});
+
+// Change all tools when the default is changed
+ui.settings.toolsEnabled.onchange = () => {
+    events.dispatch("tools-enabled-default", null);
+};

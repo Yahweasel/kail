@@ -16,6 +16,7 @@
 
 import * as chats from "./chats";
 import { dce } from "./dom";
+import * as events from "./events";
 import * as iface from "./iface";
 import * as ui from "./ui";
 
@@ -32,6 +33,7 @@ export const tools: Record<string, iface.Tool> = Object.create(null);
  */
 export function registerTool(tool: iface.Tool) {
     tools[tool.name] = tool;
+    events.dispatch("register-tool", {tool});
 }
 
 /**

@@ -182,11 +182,40 @@
             </div>
             <div class="settings-body">
               <div class="settings-section">
-                <!--<div class="settings-section-title">Model</div>-->
+                <div class="settings-section-title">Model</div>
+
                 <div class="settings-row">
                   <div class="settings-row-info"><div class="settings-row-label">Model</div><div class="settings-row-desc">Select which model to use for responses</div></div>
                   <select class="settings-select" id="model-select"></select>
                 </div>
+
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">Force name</div>
+                    <div class="settings-row-desc">Force the AI to name the chat</div>
+                  </div>
+                  <label class="toggle"><input type="checkbox" id="cfg-force-name" checked /><span class="toggle-slider"></span></label>
+                </div>
+
+                <div class="settings-row stacked">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">Other API parameters</div>
+                    <div class="settings-row-desc">Additional request parameters as JSON</div>
+                    <textarea class="settings-textarea" id="cfg-req-parameters" placeholder='{&#10;    "top_p": 0.9&#10;}'></textarea>
+                  </div>
+                </div>
+
+                <div class="settings-section-title">Tools</div>
+
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">Default enabled</div>
+                    <div class="settings-row-desc">Enable tools by default? Changing this en/disables all tools and sets the default for new tools.</div>
+                  </div>
+                  <label class="toggle"><input type="checkbox" id="cfg-tools-enabled" checked /><span class="toggle-slider"></span></label>
+                </div>
+
+                <div id="cfg-tools"></div>
                 <!--
                 <div class="settings-row">
                   <div class="settings-row-info"><div class="settings-row-label">Temperature</div><div class="settings-row-desc">Controls randomness (0 = deterministic, 1 = creative)</div></div>
