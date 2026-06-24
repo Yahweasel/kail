@@ -20,6 +20,18 @@ const workerSrc = `
     delete globalThis.fetch;
     delete globalThis.XMLHttpRequest;
 
+    globalThis.document = {
+        createElement: x => {
+            if (x === "canvas") return new OffscreenCanvas(1024, 1024);
+            return null;
+        },
+
+        getElementById: x => {
+            if (x === "canvas") return new OffscreenCanvas(1024, 1024);
+            return null;
+        }
+    };
+
     const AsyncFunction = (async function() {}).constructor;
 
     const init = await new Promise(res => {
