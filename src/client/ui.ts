@@ -307,6 +307,24 @@ export function mkMsgBox(
                 img.onclick = () => openLightbox(part.image_url.url);
                 break;
             }
+
+            case "input_audio":
+            {
+                const audio = dce("audio");
+                audio.controls = true;
+                audio.src = part.input_audio.url;
+                body.appendChild(audio);
+                break;
+            }
+
+            case "input_video":
+            {
+                const video = dce("video");
+                video.controls = true;
+                video.src = part.input_video.url;
+                body.appendChild(video);
+                break;
+            }
         }
     }
 

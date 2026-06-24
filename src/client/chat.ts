@@ -21,13 +21,13 @@ import * as events from "./events";
 import * as iface from "./iface";
 import * as ui from "./ui";
 
-const attachedImages: string[] = [];
+const attachments: string[] = [];
 
 ui.inputAttachBtn.onchange = _ => {
     for (const file of Array.from(ui.inputAttachBtn.files!)) {
         const rdr = new FileReader();
         rdr.onload = _ => {
-            attachedImages.push(<string> rdr.result);
+            attachments.push(<string> rdr.result);
             renderAttachments();
         };
         rdr.readAsDataURL(file);
@@ -37,25 +37,44 @@ ui.inputAttachBtn.onchange = _ => {
 
 function renderAttachments() {
     ui.inputAttachments.innerHTML = "";
-    attachedImages.forEach((img, idx) => {
+    attachments.forEach((data, idx) => {
         const box = dce("div");
         box.className = "attachment-thumb";
-        const disp = dce("img");
-        disp.src = img;
-        disp.alt = "attachment";
-        box.appendChild(disp);
+
+        if (/^data:audio/.test(data)) {
+            const disp = dce("audio");
+            disp.controls = true;
+            disp.src = data;
+            box.appendChild(disp);
+
+        } else if (/^data:video/.test(data)) {
+            const disp = dce("video");
+            disp.controls = true;
+            disp.src = data;
+            box.appendChild(disp);
+
+        } else {
+            // Assume image
+            const disp = dce("img");
+            disp.src = data;
+            disp.alt = "attachment";
+            box.appendChild(disp);
+
+        }
+
         const close = dce("button");
         close.className = "attachment-remove";
         close.onclick = () => {
-            attachedImages.splice(idx, 1);
+            attachments.splice(idx, 1);
             renderAttachments();
         };
         close.innerText = "✕";
         box.appendChild(close);
+
         ui.inputAttachments.appendChild(box);
     });
     ui.inputAttachments.classList.toggle(
-        "has-items", attachedImages.length > 0
+        "has-items", attachments.length > 0
     );
 }
 
@@ -72,11 +91,29 @@ async function sendMessage() {
 
     // Build the message content
     const content: iface.MessageContent[] = [];
-    while (attachedImages.length) {
-        content.push(<iface.MessageContentImage> {
-            type: "image_url",
-            image_url: {url: attachedImages.shift()}
-        });
+    while (attachments.length) {
+        const data = attachments.shift()!;
+
+        if (/^data:audio/.test(data)) {
+            content.push(<iface.MessageContentAudio> {
+                type: "input_audio",
+                input_audio: {url: data}
+            });
+
+        } else if (/^data:video/.test(data)) {
+            content.push(<iface.MessageContentVideo> {
+                type: "input_video",
+                input_video: {url: data}
+            });
+
+        } else {
+            // Assume image
+            content.push(<iface.MessageContentImage> {
+                type: "image_url",
+                image_url: {url: data}
+            });
+
+        }
     }
     renderAttachments();
 

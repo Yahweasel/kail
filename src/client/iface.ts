@@ -41,9 +41,33 @@ export interface MessageContentImage {
     image_url: {url: string};
 }
 
+/**
+ * Audio message content. In practice, input_audio.url will always be a data:
+ * URL.
+ */
+export interface MessageContentAudio {
+    type: "input_audio";
+    input_audio: {url: string};
+}
+
+/**
+ * Video message content. In practice, input_video.url will always be a data:
+ * URL.
+ */
+export interface MessageContentVideo {
+    type: "input_video";
+    input_video: {url: string};
+}
+
+
+/**
+ * All valid message types.
+ */
 export type MessageContent =
     MessageContentText |
-    MessageContentImage;
+    MessageContentImage |
+    MessageContentAudio |
+    MessageContentVideo;
 
 /**
  * A function call from the AI.

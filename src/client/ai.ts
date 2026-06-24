@@ -164,51 +164,15 @@ async function lossyConversation(conv: iface.Message[]): Promise<iface.Message[]
     return ret;
 }
 
-/* Not working correctly with llama.cpp for unknown reasons
-// Cache of images cached on the server
-const cacheImageCache: WeakMap<
-    iface.MessageContentImage, iface.MessageContentImage
-> = new WeakMap();
-
-// Cache an image on the server
-async function cacheImage(
-    image: iface.MessageContentImage
-): Promise<iface.MessageContentImage> {
-    if (!image.image_url.url.startsWith("data:"))
-        return image;
-    if (cacheImageCache.has(image))
-        return cacheImageCache.get(image)!;
-
-    try {
-        // Post it
-        const f = await fetch("/cache/set", {
-            method: "POST",
-            headers: {"content-type": "text/plain"},
-            body: image.image_url.url
-        });
-        const res = await f.json();
-        const cImage: iface.MessageContentImage = {
-            type: "image_url",
-            image_url: {url: res.url}
-        };
-
-        cacheImageCache.set(image, cImage);
-        return cImage;
-
-    } catch (ex) {
-        return image;
-
-    }
-}
-
-// Helper function to cache an entire conversation
-async function cacheConversation(conv: iface.Message[]): Promise<iface.Message[]> {
+/* Remove the data: URI header from audio and video data for llama.cpp
+ * compatibility */
+async function dataFixup(conv: iface.Message[]): Promise<iface.Message[]> {
     const ret: iface.Message[] = [];
 
     for (const c of conv) {
         if (
             typeof c.content === "string" ||
-            c.content.findIndex(x => x.type === "image_url") < 0
+            c.content.findIndex(x => x.type.startsWith("input_")) < 0
         ) {
             ret.push(c);
             continue;
@@ -219,11 +183,26 @@ async function cacheConversation(conv: iface.Message[]): Promise<iface.Message[]
         cc.content = [];
 
         for (const part of c.content) {
-            if (part.type !== "image_url") {
-                cc.content.push(part);
+            let url: string;
+            if (part.type === "input_audio") {
+                url = part.input_audio.url;
+            } else if (part.type === "input_video") {
+                url = part.input_video.url;
+            } else {
                 continue;
             }
-            cc.content.push(await cacheImage(part));
+            const data = {
+                data: url.slice(url.indexOf(",") + 1)
+            };
+
+            const pp = <any> {};
+            Object.assign(pp, part);
+            if (part.type === "input_audio")
+                pp.input_audio = data;
+            else if (part.type === "input_video")
+                pp.input_video = data;
+
+            cc.content.push(pp);
         }
 
         ret.push(cc);
@@ -231,7 +210,7 @@ async function cacheConversation(conv: iface.Message[]): Promise<iface.Message[]
 
     return ret;
 }
-*/
+
 
 
 /**
@@ -382,11 +361,13 @@ async function completeAssistant(conv: iface.Conversation) {
 
 
     try {
+        const inputMessages = await dataFixup(conv.messages);
+
         // Set up our query with the settings
         const req: any = {
             model: ui.settings.model.value,
             stream: true,
-            messages: conv.messages, //await cacheConversation(conv.messages),
+            messages: inputMessages,
             tools: Object.values(tools).filter(x => x.enabled).map(x => x.schema)
         };
 
@@ -435,13 +416,18 @@ async function completeAssistant(conv: iface.Conversation) {
 
         if (f.status === 413 /* content too large */) {
             // Try lossy
-            req.messages = await lossyConversation(conv.messages);
+            req.messages = await lossyConversation(inputMessages);
             reqInit.body = JSON.stringify(req);
             f = await fetch("/v1/chat/completions", reqInit);
         }
 
-        if (f.status < 200 || f.status >= 300)
-            throw Error(`${f.status} ${f.statusText}`);
+        if (f.status < 200 || f.status >= 300) {
+            let detail = null;
+            try {
+                detail = await f.json();
+            } catch (ex) {}
+            throw Error(`${f.status} ${f.statusText}: ${JSON.stringify(detail)}`);
+        }
 
         // Get and stream the content
         let input = "";
