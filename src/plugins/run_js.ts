@@ -29,31 +29,25 @@ const workerSrc = `
         addEventListener("message", ev => res(ev.data));
     });
 
-    if (init.canvas) {
-        globalThis.canvas = init.canvas;
+    globalThis.image = function(idx) {
+        postMessage({c: "image", idx});
+        return new Promise(res => {
+            addEventListener("message", ev => res(ev.data), {once: true});
+        });
+    };
 
-        globalThis.image = function(idx) {
-            postMessage({c: "image", idx});
-            return new Promise(res => {
-                addEventListener("message", ev => res(ev.data), {once: true});
-            });
-        };
-    }
-
-    let ret = null;
-    let error = null;
     try {
         const code = AsyncFunction(init.src);
-        ret = await code();
-    } catch (ex) {
-        error = ex + "";
-    }
+        const ret = await code();
 
-    if (init.canvas) {
-        const img = await init.canvas.convertToBlob();
-        postMessage({c: "done", img, error});
-    } else {
-        postMessage({c: "done", ret, error});
+        if (ret instanceof OffscreenCanvas) {
+            const img = await ret.convertToBlob();
+            postMessage({c: "done", img});
+        } else {
+            postMessage({c: "done", ret});
+        }
+    } catch (ex) {
+        postMessage({c: "done", error: ex + ""});
     }
 `;
 
@@ -111,7 +105,7 @@ async function sendImage(w: Worker, conv: iface.Conversation, idx: number) {
 }
 
 async function jsTool(
-    conv: iface.Conversation, arg: string, useCanvas: boolean
+    conv: iface.Conversation, arg: string
 ): Promise<string | iface.MessageContent[]> {
     const argObj = JSON.parse(arg);
 
@@ -127,22 +121,14 @@ async function jsTool(
         });
     });
 
-    if (useCanvas) {
-        // Prepare to send images back
-        w.addEventListener("message", ev => {
-            if (ev.data.c === "image")
-                sendImage(w, conv, ev.data.idx);
-        });
+    // Prepare to send images back
+    w.addEventListener("message", ev => {
+        if (ev.data.c === "image")
+            sendImage(w, conv, ev.data.idx);
+    });
 
-        // Start the code
-        const canvas = new OffscreenCanvas(1024, 1024);
-        w.postMessage({canvas, src: argObj.src}, [canvas]);
-
-    } else {
-        // Start the code
-        w.postMessage({src: argObj.src});
-
-    }
+    // Start the code
+    w.postMessage({src: argObj.src});
 
     // Wait for their response
     const wRet = await Promise.race([
@@ -155,7 +141,7 @@ async function jsTool(
     if (wRet.error)
         return `ERROR: ${wRet.error}`;
 
-    if (useCanvas) {
+    if (wRet.img) {
         // Turn the blob into a data URL
         const rdr = new FileReader();
         const dataP = new Promise(res => {
@@ -185,7 +171,7 @@ declare let KAIL: iface.KAIL;
 KAIL.registerTool({
     name: "run_js",
     enabled: true,
-    function: (conv, arg) => jsTool(conv, arg, false),
+    function: jsTool,
     schema: {
         type: "function",
         function: {
@@ -206,31 +192,11 @@ let x = 21;
 return x * 2;
 \`\`\`
 
-Use this for both simple calculation and executing code. The sandbox the code is run in has no access to the DOM or any other modules.`,
-            parameters: {
-                type: "object",
-                properties: {
-                    src: {
-                        type: "string",
-                        description: "The JavaScript source to run. May be asynchronous (use await)."
-                    }
-                }
-            },
-            required: ["src"]
-        },
-        strict: true
-    }
-});
+Use this for both simple calculation and executing code. The sandbox the code is run in has no access to the DOM or any other modules.
 
-KAIL.registerTool({
-    name: "js_canvas",
-    enabled: true,
-    function: (conv, arg) => jsTool(conv, arg, true),
-    schema: {
-        type: "function",
-        function: {
-            name: "js_canvas",
-            description: "Use a JavaScript OffscreenCanvas to draw. You are given an OffscreenCanvas of size 1024x1024 (though you may change its size) in the global variable `canvas`, and can draw on it using any canvas techniques available. Make sure to create a rendering context first.\n\nThe return from this tool is an image representing the result of drawing on the canvas, and if your code had an error, the error message.\n\nThe code can access previous images with `await image(idx)`, where `idx` is the index of the previous image. Index 0 is the first image in the conversation, index 1 is the second, etc. You can also use negative indices to index from the end, e.g., the most recent image is -1, second most recent is -2, etc. You should use negative indices whenever possible.",
+You have access to OffscreenCanvas. If you return an OffscreenCanvas, it will be converted to an image and returned. In this way, you can use this tool to draw.
+
+You have access to previous images in the conversation with \`await image(idx)\`, where \`idx\` is the index of the previous image. Index 0 is the first image in the conversation, index 1 is the second, etc. You can also use negative indices to index from the end, e.g., the most recent image is -1, the second most recent is -2, etc. You should use negative indices whenever possible. \`await image(idx)\` returns an ImageBitmap.`,
             parameters: {
                 type: "object",
                 properties: {
