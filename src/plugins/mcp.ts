@@ -27,7 +27,12 @@ const list: Record<
     return await f.json();
 })();
 
-// Tool callback function
+/**
+ * Tool callback function for MCP tools.
+ * @param url  MCP tool URL identifier
+ * @param arg  JSON string of arguments
+ * @returns Tool result from MCP server
+ */
 async function mcpTool(url: string, arg: string) {
     const f = await fetch(`/tools/mcp/${url}`, {
         method: "POST",
@@ -44,7 +49,7 @@ for (const url in list) {
     KAIL.registerTool({
         name: tool.name,
         enabled: true,
-        function: (_, arg) => mcpTool(url, arg),
+        function: (_: iface.Conversation, arg: string) => mcpTool(url, arg),
         schema: {
             type: "function",
             function: {

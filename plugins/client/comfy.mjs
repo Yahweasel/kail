@@ -18,7 +18,12 @@ const models = await (async () => {
     const f = await fetch("/tools/comfy/models");
     return await f.json();
 })();
-// Helper function: get an image by index
+/**
+ * Get an image URL from the conversation by index.
+ * @param conv  Conversation to search
+ * @param imageIdx  Index of image (positive for forward, negative for backward)
+ * @returns Image URL, or empty string if not found
+ */
 function getImage(conv, imageIdx) {
     if (imageIdx >= 0) {
         for (const msg of conv.messages) {
@@ -48,7 +53,12 @@ function getImage(conv, imageIdx) {
     }
     return "";
 }
-// Tool functions
+/**
+ * Tool function for AI image generation.
+ * @param _  Conversation (not used)
+ * @param arg  JSON string with generation parameters
+ * @returns Generated image as message content, or error string
+ */
 async function toolImageGeneration(_, arg) {
     const f = await fetch("/tools/comfy/image_generation", {
         method: "POST",
@@ -64,6 +74,12 @@ async function toolImageGeneration(_, arg) {
         return r;
     }
 }
+/**
+ * Tool function for AI image editing.
+ * @param conv  Conversation to get the source image from
+ * @param argS  JSON string with edit parameters including image index
+ * @returns Edited image as message content, or error string
+ */
 async function toolImageEdit(conv, argS) {
     // Get the image
     const arg = JSON.parse(argS);
@@ -87,6 +103,12 @@ async function toolImageEdit(conv, argS) {
         return r;
     }
 }
+/**
+ * Tool function for AI masked image editing.
+ * @param conv  Conversation to get source image and mask from
+ * @param argS  JSON string with edit parameters including image and mask indices
+ * @returns Edited image as message content, or error string
+ */
 async function toolImageEditMask(conv, argS) {
     // Get the image
     const arg = JSON.parse(argS);

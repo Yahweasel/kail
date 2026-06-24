@@ -69,6 +69,12 @@ const lossyImageCache: WeakMap<
     iface.MessageContentImage, iface.MessageContentImage
 > = new WeakMap();
 
+/**
+ * Convert an image to a lossy format (JPEG/WebP) for compatibility with
+ * models that have data size limits.
+ * @param image  Image to convert
+ * @returns The image, possibly in a lossy format
+ */
 async function lossyImage(
     image: iface.MessageContentImage
 ): Promise<iface.MessageContentImage> {
@@ -79,7 +85,7 @@ async function lossyImage(
     const img = new Image();
     img.src = image.image_url.url;
     {
-        const ok = await new Promise(res => {
+        const ok = await new Promise<boolean>(res => {
             img.onload = () => res(true);
             img.onerror = () => res(false);
         });
@@ -105,7 +111,7 @@ async function lossyImage(
             return false;
 
         const rdr = new FileReader();
-        const rdrP = new Promise(res => {
+        const rdrP = new Promise<boolean>(res => {
             rdr.onload = () => {
                 ret = <string> rdr.result;
                 res(true);
@@ -133,7 +139,11 @@ async function lossyImage(
     }
 }
 
-// Helper function to lossy-ify an entire conversation
+/**
+ * Convert all images in a conversation to lossy formats for compatibility.
+ * @param conv  Conversation to convert
+ * @returns Copy of conversation with lossy images
+ */
 async function lossyConversation(conv: iface.Message[]): Promise<iface.Message[]> {
     const ret: iface.Message[] = [];
 
@@ -164,8 +174,12 @@ async function lossyConversation(conv: iface.Message[]): Promise<iface.Message[]
     return ret;
 }
 
-/* Remove the data: URI header from audio and video data for llama.cpp
- * compatibility */
+/**
+ * Remove the data: URI header from audio and video data for llama.cpp
+ * compatibility.
+ * @param conv  Conversation to fix up
+ * @returns Copy of conversation with fixed up data URLs
+ */
 async function dataFixup(conv: iface.Message[]): Promise<iface.Message[]> {
     const ret: iface.Message[] = [];
 
@@ -286,7 +300,11 @@ export async function complete(conv: iface.Conversation) {
     }
 }
 
-// Complete an assistant message (call the AI)
+/**
+ * Complete an assistant message (call the AI) and handle streaming response.
+ * @param conv  Conversation to complete
+ * @returns True if completion succeeded, false if cancelled or failed
+ */
 async function completeAssistant(conv: iface.Conversation) {
     const msg = conv.inProgress = <iface.Message> {
         role: "assistant",

@@ -21,45 +21,132 @@ import * as iface from "./iface";
 
 import * as smd from "streaming-markdown";
 
+/**
+ * The chat list container element.
+ */
 export const chatList = gebi("chat-list")!;
+/**
+ * The chat upload button for loading conversations from JSON files.
+ */
 export const chatUploadBtn =
     <HTMLInputElement> gebi("json-upload-input")!;
+/**
+ * The new chat button to start a new conversation.
+ */
 export const newChatBtn = gebi("new-chat-btn")!;
+/**
+ * The sidebar container element.
+ */
 export const sidebar = gebi("sidebar")!;
+/**
+ * The button to toggle sidebar visibility.
+ */
 export const sidebarBtn = gebi("toggle-sidebar-btn")!;
+/**
+ * The header title showing the current chat name.
+ */
 export const currentChatTitle = gebi("header-title")!;
+/**
+ * The model badge showing the current model (header).
+ */
 export const currentModelBadge = gebi("model-badge")!;
+/**
+ * The messages container element.
+ */
 export const messages = gebi("messages")!;
 
+/**
+ * The input attachments container for displaying media attachments.
+ */
 export const inputAttachments = gebi("input-attachments")!;
+/**
+ * Buttons for selecting who to post as (user, assistant, tool, system).
+ */
 export const inputPostAsBtns: Record<string, HTMLElement> = {
     user: gebi("post-as-user-btn")!,
     assistant: gebi("post-as-assistant-btn")!,
     tool: gebi("post-as-tool-btn")!,
     system: gebi("post-as-system-btn")!
 };
+/**
+ * Current role for posting messages.
+ */
 export let inputPostAs: "user" | "assistant" | "tool" | "system" = "user";
+/**
+ * The button to toggle manual mode.
+ */
 export const manualToggleBtn = gebi("manual-toggle-btn")!;
+/**
+ * The hint element shown when manual mode is active.
+ */
 export const inputHintManualMode = gebi("input-hint-manual-mode")!;
+/**
+ * Whether manual mode is active (AI does not auto-complete).
+ */
 export let manualMode = false;
 
+/**
+ * The input shell container element.
+ */
 export const inputShell = gebi("input-shell")!;
+/**
+ * The message input textarea.
+ */
 export const inputMessage =
     <HTMLTextAreaElement> gebi("message-input")!;
+/**
+ * The file input button for attaching files.
+ */
 export const inputAttachBtn = <HTMLInputElement> gebi("file-input")!;
+/**
+ * The send button for submitting messages.
+ */
 export const inputSendBtn = gebi("send-btn")!;
+/**
+ * The stop button for cancelling ongoing completions.
+ */
 export const stopBtn = gebi("stop-btn")!;
 
+/**
+ * The model badge showing the current model.
+ */
 export const modelBadge = gebi("model-badge")!;
+/**
+ * The image element in the lightbox viewer.
+ */
 export const lightboxImg = <HTMLImageElement> gebi("lightbox-img")!;
+/**
+ * The lightbox container element.
+ */
 export const lightbox = gebi("lightbox")!;
+/**
+ * The lightbox close button.
+ */
 export const lightboxClose = gebi("lightbox-close")!;
 
+/**
+ * Settings UI elements.
+ */
 export const settings = {
+    /**
+     * First settings button (in header).
+     */
     btn1: gebi("settings-btn")!,
+    /**
+     * Second settings button.
+     */
     btn2: gebi("settings-btn2")!,
+    /**
+     * Settings overlay panel.
+     */
     overlay: gebi("settings-overlay")!,
+    /**
+     * Settings close button.
+     */
     close: gebi("settings-close-btn")!,
+    /**
+     * Tools settings section.
+     */
     toolsSeg: gebi("cfg-tools")!,
 
     /**
@@ -73,7 +160,7 @@ export const settings = {
     forceName: <HTMLInputElement> gebi("cfg-force-name")!,
 
     /**
-     * Other request parameters.
+     * Other request parameters (JSON).
      */
     reqParams: <HTMLTextAreaElement> gebi("cfg-req-parameters")!,
 
@@ -94,6 +181,10 @@ export let currentConversation: iface.Conversation =
  * conversation is switched while it's being drawn.
  */
 export let cursor: HTMLElement | null = null;
+/**
+ * Set the cursor element for streaming updates.
+ * @param to  The cursor element, or null to clear
+ */
 export function setCursor(to: HTMLElement | null) {
     cursor = to;
 }
@@ -121,6 +212,9 @@ manualToggleBtn.onclick = () => {
 };
 
 
+/**
+ * Metadata for message entity types (label and icon).
+ */
 const entityMeta = {
   assistant: { label: 'Assistant', icon: icons.assistant },
   user:      { label: 'User',      icon: icons.user },
@@ -129,7 +223,7 @@ const entityMeta = {
 };
 
 /**
- * Auto-resize the input box.
+ * Auto-resize the input textarea based on its content.
  */
 export function inputAutoResize() {
     inputMessage.style.height = "auto";
@@ -149,7 +243,7 @@ function markdown(target: HTMLElement, text: string) {
 }
 
 // Sidebar toggle
-sidebarBtn.onclick = () => {
+sidebarBtn.onclick = (_: MouseEvent) => {
     sidebar.classList.toggle("collapsed");
 };
 
@@ -391,9 +485,10 @@ function toggleCollapsible(ev: MouseEvent) {
  * @param type  Type of collapsible box. "tool-use" is for the assistant using a
  *              tool, and "tool" is the tool itself.
  * @param labelSuffix  Suffix to add to the label, e.g., the specific tool.
+ * @returns Object containing the box element and body element
  */
 export function mkCollapsible(
-    type: "reasoning" | "tool-use" | "tool", labelSuffix = ""
+    type: "reasoning" | "tool-use" | "tool", labelSuffix: string = ""
 ) {
     const cls  = type === "reasoning" ? "reasoning" : "tool-use";
     const icon = type === "reasoning" ? icons.reasoning : icons.tool;
@@ -439,10 +534,17 @@ export function stop(fn: (()=>unknown)|null) {
 function openSettings() {
     settings.overlay.classList.add("visible");
 }
+/**
+ * Close settings modal when clicking overlay.
+ * @param ev  Click event
+ */
 function closeSettings(ev: Event) {
     if (ev.target === settings.overlay)
         closeSettingsDirect();
 }
+/**
+ * Close settings modal directly.
+ */
 function closeSettingsDirect() {
     settings.overlay.classList.remove('visible');
 }
@@ -467,14 +569,14 @@ currentChatTitle.onclick = () => {
     sel.addRange(range);
 };
 
-currentChatTitle.onkeydown = ev => {
+currentChatTitle.onkeydown = (ev: KeyboardEvent) => {
     if (ev.key === "Enter") {
         ev.preventDefault();
         currentChatTitle.blur();
     }
 };
 
-currentChatTitle.onblur = () => {
+currentChatTitle.onblur = (_: FocusEvent) => {
     if (!currentChatTitle.classList.contains("editing"))
         return;
     currentChatTitle.classList.remove("editing");
@@ -490,7 +592,7 @@ currentChatTitle.onblur = () => {
 };
 
 // Escape is the ultimate closer
-document.body.onkeydown = ev => {
+document.body.onkeydown = (ev: KeyboardEvent) => {
     if (ev.key === "Escape") {
         ev.preventDefault();
         closeLightbox();

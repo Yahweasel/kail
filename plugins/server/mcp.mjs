@@ -58,7 +58,11 @@ for (const name in config.mcpServers || {}) {
         console.error(ex);
     }
 }
-// Function for tool handling
+/**
+ * Function for handling MCP tool requests.
+ * @param req  HTTP request
+ * @param res  HTTP response
+ */
 async function mcpTool(req, res) {
     if (req.url === "/") {
         // Just the list

@@ -13,6 +13,12 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+/**
+ * Tool function to render SVG to a raster image.
+ * @param _  Conversation (not used)
+ * @param arg  JSON string with "svg" property containing SVG data
+ * @returns Rendered image as message content, or error string
+ */
 async function render_svg(_, arg) {
     const argObj = JSON.parse(arg);
     let blob = new Blob([
@@ -50,6 +56,9 @@ async function render_svg(_, arg) {
             image_url: { url: data }
         }];
 }
+/**
+ * SVG rendering tool definition.
+ */
 const render_svg_tool = {
     name: "render_svg",
     enabled: true,

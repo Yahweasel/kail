@@ -23,10 +23,10 @@ import * as ui from "./ui";
 
 const attachments: string[] = [];
 
-ui.inputAttachBtn.onchange = _ => {
+ui.inputAttachBtn.onchange = (_: Event) => {
     for (const file of Array.from(ui.inputAttachBtn.files!)) {
         const rdr = new FileReader();
-        rdr.onload = _ => {
+        rdr.onload = (_: ProgressEvent<FileReader>) => {
             attachments.push(<string> rdr.result);
             renderAttachments();
         };
@@ -35,6 +35,9 @@ ui.inputAttachBtn.onchange = _ => {
     ui.inputAttachBtn.value = "";
 };
 
+/**
+ * Render the attachment thumbnails in the input area.
+ */
 function renderAttachments() {
     ui.inputAttachments.innerHTML = "";
     attachments.forEach((data, idx) => {
@@ -78,7 +81,9 @@ function renderAttachments() {
     );
 }
 
-// Send our input message
+/**
+ * Send the current input message.
+ */
 async function sendMessage() {
     const conv = ui.currentConversation;
     if (conv.inProgress) {
@@ -160,7 +165,7 @@ async function sendMessage() {
     await ai.complete(conv);
 }
 
-ui.inputMessage.onkeydown = function(ev) {
+ui.inputMessage.onkeydown = function(ev: KeyboardEvent) {
     if (ev.key === "Enter" && !ev.shiftKey) {
         // Send message
         ev.preventDefault();
@@ -171,7 +176,12 @@ ui.inputMessage.onkeydown = function(ev) {
 ui.inputSendBtn.onclick = sendMessage;
 
 
-// Download a message
+/**
+ * Download a message as a file.
+ * @param conv  Conversation the message belongs to
+ * @param msg  Message to download
+ * @param json  Whether to download as JSON (true) or plain text (false)
+ */
 function downloadMessage(
     conv: iface.Conversation,
     msg: iface.Message,
@@ -231,7 +241,13 @@ events.events.addEventListener("click-msg-dl-json", (ev: any) => {
 });
 
 
-// Edit this message
+/**
+ * Edit a message, replacing its content with an editable textarea.
+ * @param conv  Conversation the message belongs to
+ * @param msg  Message to edit
+ * @param box  Message box to replace with editor
+ * @param json  Whether to edit as JSON (true) or plain text (false)
+ */
 function editMessage(
     conv: iface.Conversation,
     msg: iface.Message,
@@ -435,7 +451,13 @@ events.events.addEventListener("click-msg-edit-json", (ev: any) => {
 });
 
 
-// Delete this message, and possibly further messages
+/**
+ * Delete a message, and possibly all messages after it.
+ * @param conv  Conversation the message belongs to
+ * @param msg  Message to delete
+ * @param box  Message box to remove
+ * @param trunc  Whether to truncate (delete message and all after) or just delete this message
+ */
 async function deleteMessage(
     conv: iface.Conversation,
     msg: iface.Message,

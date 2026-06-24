@@ -36,14 +36,23 @@ for (const file of await fs.readdir("config/comfy/workflows")) {
             break;
     }
 }
-// Helper function to round to a VAE-OK scale
+/**
+ * Round a dimension to a VAE-compatible scale.
+ * @param x  Dimension value to round
+ * @param vaeScale  VAE scale factor
+ * @returns Rounded value, minimum of vaeScale
+ */
 function vaeRound(x, vaeScale) {
     x = Math.round(x / vaeScale) * vaeScale;
     if (x <= 0)
         x = vaeScale;
     return x;
 }
-// Generic "maybe seed" to use a seed if set or random otherwise
+/**
+ * Get a valid seed value, using the provided seed if valid, or generating a random one.
+ * @param seed  Seed value to validate, or any value for random seed
+ * @returns Valid 31-bit integer seed
+ */
 function maybeSeed(seed) {
     if (typeof seed === "number" &&
         ~~seed === seed &&
@@ -53,7 +62,12 @@ function maybeSeed(seed) {
     }
     return ~~(Math.random() * 0x7fffffff);
 }
-// Generic setter for a path
+/**
+ * Set a value at a nested path in an object.
+ * @param obj  Object to modify
+ * @param path  Dot-separated path to the value
+ * @param value  Value to set
+ */
 function pathSet(obj, path, value) {
     const parts = path.split(".");
     const last = parts.pop();
@@ -61,7 +75,11 @@ function pathSet(obj, path, value) {
         obj = obj[part];
     obj[last] = value;
 }
-// Helper function to make the actual request
+/**
+ * Make a request to the Comfy server and send the result.
+ * @param res  HTTP response to write to
+ * @param workflow  Workflow JSON to execute
+ */
 async function comfyCall(res, workflow) {
     try {
         // Then make our request
@@ -97,7 +115,11 @@ async function comfyCall(res, workflow) {
         res.end(`Unexpected error generating image: ${ex}`);
     }
 }
-// Prepare our proxies
+/**
+ * Tool function proxy for Comfy image generation/editing.
+ * @param req  HTTP request
+ * @param res  HTTP response
+ */
 async function proxy(req, res) {
     // Read in the body
     let body = null;

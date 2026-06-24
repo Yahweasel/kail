@@ -34,15 +34,26 @@ const PLUGINS_PATH = "/plugins";
 const PROXY_PATH = "/v1/";
 const TOOLS_PATH = "/tools/"
 
-// Tools to be filled in by plugins
+/**
+ * Tools registered by plugins.
+ */
 const tools: Record<string, iface.Tool> = Object.create(null);
 
+/**
+ * Register a tool.
+ * @param tool  Tool to register
+ */
 function registerTool(tool: iface.Tool) {
     tools[tool.name] = tool;
 }
 
+/**
+ * Create a proxy function that forwards requests to a target URL.
+ * @param target  Target base URL to proxy to
+ * @returns Proxy function for tool requests
+ */
 function toolFunctionProxy(target: string): iface.ToolFunction {
-    return function(req, res) {
+    return function(req: http.IncomingMessage, res: http.ServerResponse) {
         const targetUrl = new URL(req.url!, target);
 
         const proxyReq = http.request(targetUrl, {

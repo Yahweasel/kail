@@ -20,6 +20,9 @@ import * as crypto from "crypto";
 import * as fs from "fs/promises";
 import * as http from "http";
 
+/**
+ * Cache directory path.
+ */
 const cacheDir: string = config.cache?.dir || "cache";
 await fs.mkdir(cacheDir, {recursive: true});
 
@@ -79,8 +82,8 @@ export async function cacheSet(data: string, res: http.ServerResponse) {
 
 /**
  * Get a file from the cache.
- * @param name  Filename
- * @param res  HTTP response
+ * @param name  Filename (validated for safety)
+ * @param res  HTTP response to write to
  */
 export async function cacheGet(name: string, res: http.ServerResponse) {
     if (/[^0-9a-z\.-]/.test(name)) {

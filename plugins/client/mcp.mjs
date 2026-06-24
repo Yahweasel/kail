@@ -18,7 +18,12 @@ const list = await (async () => {
     const f = await fetch("/tools/mcp");
     return await f.json();
 })();
-// Tool callback function
+/**
+ * Tool callback function for MCP tools.
+ * @param url  MCP tool URL identifier
+ * @param arg  JSON string of arguments
+ * @returns Tool result from MCP server
+ */
 async function mcpTool(url, arg) {
     const f = await fetch(`/tools/mcp/${url}`, {
         method: "POST",

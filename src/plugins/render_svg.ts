@@ -16,6 +16,12 @@
 
 import type * as iface from "../client/iface";
 
+/**
+ * Tool function to render SVG to a raster image.
+ * @param _  Conversation (not used)
+ * @param arg  JSON string with "svg" property containing SVG data
+ * @returns Rendered image as message content, or error string
+ */
 async function render_svg(
     _: iface.Conversation, arg: string
 ): Promise<string | iface.MessageContent[]> {
@@ -61,7 +67,10 @@ async function render_svg(
     }];
 }
 
-const render_svg_tool = <iface.Tool> {
+/**
+ * SVG rendering tool definition.
+ */
+const render_svg_tool: iface.Tool = {
     name: "render_svg",
     enabled: true,
     function: render_svg,

@@ -18,6 +18,12 @@ import * as ai from "../ai";
 import * as events from "../events";
 import * as iface from "../iface";
 
+/**
+ * Tool function to set the name of the current conversation.
+ * @param chat  Conversation to rename
+ * @param args  JSON string with "name" property
+ * @returns Empty string on success
+ */
 async function set_chat_name(chat: iface.Conversation, args: string) {
     const obj = JSON.parse(args);
     chat.name = obj.name;

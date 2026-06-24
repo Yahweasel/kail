@@ -16,6 +16,9 @@
 
 import type * as http from "http";
 
+/**
+ * Function type for server-side tools.
+ */
 export type ToolFunction =
     (req: http.IncomingMessage, res: http.ServerResponse) => unknown;
 

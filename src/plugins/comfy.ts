@@ -24,7 +24,12 @@ const models: Record<string, string[]> = await (async () => {
     return await f.json();
 })();
 
-// Helper function: get an image by index
+/**
+ * Get an image URL from the conversation by index.
+ * @param conv  Conversation to search
+ * @param imageIdx  Index of image (positive for forward, negative for backward)
+ * @returns Image URL, or empty string if not found
+ */
 function getImage(conv: iface.Conversation, imageIdx: number) {
     if (imageIdx >= 0) {
         for (const msg of conv.messages) {
@@ -59,7 +64,12 @@ function getImage(conv: iface.Conversation, imageIdx: number) {
     return "";
 }
 
-// Tool functions
+/**
+ * Tool function for AI image generation.
+ * @param _  Conversation (not used)
+ * @param arg  JSON string with generation parameters
+ * @returns Generated image as message content, or error string
+ */
 async function toolImageGeneration(
     _: iface.Conversation, arg: string
 ): Promise<string | iface.MessageContent[]> {
@@ -77,6 +87,12 @@ async function toolImageGeneration(
     }
 }
 
+/**
+ * Tool function for AI image editing.
+ * @param conv  Conversation to get the source image from
+ * @param argS  JSON string with edit parameters including image index
+ * @returns Edited image as message content, or error string
+ */
 async function toolImageEdit(
     conv: iface.Conversation, argS: string
 ): Promise<string | iface.MessageContent[]> {
@@ -105,6 +121,12 @@ async function toolImageEdit(
     }
 }
 
+/**
+ * Tool function for AI masked image editing.
+ * @param conv  Conversation to get source image and mask from
+ * @param argS  JSON string with edit parameters including image and mask indices
+ * @returns Edited image as message content, or error string
+ */
 async function toolImageEditMask(
     conv: iface.Conversation, argS: string
 ): Promise<string | iface.MessageContent[]> {

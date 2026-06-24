@@ -21,7 +21,7 @@ import * as ui from "./ui";
 
 declare let localforage: any;
 
-const lf = localforage.createInstance({
+const lf: any = localforage.createInstance({
     name: "kail"
 });
 
@@ -58,7 +58,11 @@ interface ConversationButton {
 export const conversationButtons: Record<number, ConversationButton> =
     Object.create(null);
 
-// Make a chat list box
+/**
+ * Create a chat list box element for a conversation.
+ * @param conv  Conversation to create a box for
+ * @returns Object containing the box element and its sub-elements
+ */
 function chatListBox(conv: iface.Conversation): ConversationButton {
     const box = dce("div");
     box.className = "chat-item";
@@ -307,7 +311,7 @@ async function settingAddTool(tool: iface.Tool) {
     };
     tool.enabled = el.checked;
 
-    events.events.addEventListener("tools-enabled-default", () => {
+    events.events.addEventListener("tools-enabled-default", (_: Event) => {
         el.checked = ui.settings.toolsEnabled.checked;
         el.dispatchEvent(new Event("change"));
     });

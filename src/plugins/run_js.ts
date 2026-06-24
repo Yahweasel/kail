@@ -63,7 +63,12 @@ const workerSrc = `
     }
 `;
 
-// Function to send an image from this conversation to the worker
+/**
+ * Send an image from the conversation to a worker.
+ * @param w  Worker to send the image to
+ * @param conv  Conversation to get the image from
+ * @param idx  Index of image (positive for forward, negative for backward)
+ */
 async function sendImage(w: Worker, conv: iface.Conversation, idx: number) {
     let imageStr: string | null = null;
 
@@ -116,6 +121,12 @@ async function sendImage(w: Worker, conv: iface.Conversation, idx: number) {
         w.postMessage(image);
 }
 
+/**
+ * Tool function to run JavaScript code in a sandboxed worker.
+ * @param conv  Conversation to get images from (if needed)
+ * @param arg  JSON string with "src" property containing JavaScript source
+ * @returns Execution result or error string
+ */
 async function jsTool(
     conv: iface.Conversation, arg: string
 ): Promise<string | iface.MessageContent[]> {

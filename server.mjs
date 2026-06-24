@@ -4,6 +4,9 @@ import * as http from 'http';
 import finalhandler from 'finalhandler';
 import serveStatic from 'serve-static';
 
+/**
+ * Server configuration loaded from config/config.json.
+ */
 const config = JSON.parse(await fs.readFile("config/config.json", "utf8"));
 
 /*
@@ -22,6 +25,9 @@ const config = JSON.parse(await fs.readFile("config/config.json", "utf8"));
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 var _a;
+/**
+ * Cache directory path.
+ */
 const cacheDir = ((_a = config.cache) === null || _a === void 0 ? void 0 : _a.dir) || "cache";
 await fs.mkdir(cacheDir, { recursive: true });
 /**
@@ -73,8 +79,8 @@ async function cacheSet(data, res) {
 }
 /**
  * Get a file from the cache.
- * @param name  Filename
- * @param res  HTTP response
+ * @param name  Filename (validated for safety)
+ * @param res  HTTP response to write to
  */
 async function cacheGet(name, res) {
     if (/[^0-9a-z\.-]/.test(name)) {
@@ -123,11 +129,22 @@ const CACHE_PATH = "/cache/";
 const PLUGINS_PATH = "/plugins";
 const PROXY_PATH = "/v1/";
 const TOOLS_PATH = "/tools/";
-// Tools to be filled in by plugins
+/**
+ * Tools registered by plugins.
+ */
 const tools = Object.create(null);
+/**
+ * Register a tool.
+ * @param tool  Tool to register
+ */
 function registerTool(tool) {
     tools[tool.name] = tool;
 }
+/**
+ * Create a proxy function that forwards requests to a target URL.
+ * @param target  Target base URL to proxy to
+ * @returns Proxy function for tool requests
+ */
 function toolFunctionProxy(target) {
     return function (req, res) {
         const targetUrl = new URL(req.url, target);

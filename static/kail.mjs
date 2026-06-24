@@ -40,10 +40,29 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
+/**
+ * Create a new DOM element.
+ * @param tagName  Tag name of the element to create
+ * @param options  Options for element creation
+ * @returns The newly created element
+ */
 const dce = document.createElement.bind(document);
+/**
+ * Get an element by its ID.
+ * @param elementId  ID of the element to get
+ * @returns The element with the given ID, or null if not found
+ */
 const gebi = document.getElementById.bind(document);
 
+/**
+ * Global event target for application-wide events.
+ */
 const events = new EventTarget();
+/**
+ * Dispatch a custom event on the global event target.
+ * @param type  Type of event to dispatch
+ * @param detail  Detail object to include with the event
+ */
 function dispatch(type, detail) {
     events.dispatchEvent(new CustomEvent(type, { detail }));
 }
@@ -67,15 +86,48 @@ function dispatch(type, detail) {
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+/**
+ * Icon for chat conversations.
+ */
+/**
+ * Icon for download actions.
+ */
 const download = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 7l3 3 3-3"/><rect x="2" y="11" width="12" height="3" rx="1"/></svg>';
+/**
+ * Icon for delete actions.
+ */
 const del = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4 4 14 12 14 13 4"/><line x1="2" y1="4" x2="14" y2="4"/><path d="M6 4V2h4v2"/></svg>';
+/**
+ * Icon for assistant messages.
+ */
 const assistant = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="12" height="9" rx="2"/><path d="M5 4V3a1 1 0 0 1 2 0v1M9 4V3a1 1 0 0 1 2 0v1M5.5 9h.01M10.5 9h.01"/></svg>`;
+/**
+ * Icon for reasoning/thinking content.
+ */
 const reasoning = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M6 6c0-1.1.9-2 2-2s2 .9 2 2-2 2-2 3"/><circle cx="8" cy="13" r=".5" fill="currentColor"/></svg>`;
+/**
+ * Icon for user messages.
+ */
 const user = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.31 2.69-6 6-6s6 2.69 6 6"/></svg>`;
+/**
+ * Icon for tool usage.
+ */
 const tool = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 2.5l-2 2-1.5-1.5 2-2a3 3 0 0 0-4 4L3 10a1 1 0 0 0 0 1.4l.6.6a1 1 0 0 0 1.4 0l5-5a3 3 0 0 0 4-4z"/></svg>`;
+/**
+ * Icon for system messages.
+ */
 const system = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><circle cx="8" cy="11" r=".5" fill="currentColor"/></svg>`;
+/**
+ * Icon for edit actions.
+ */
 const edit = '<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>';
+/**
+ * Icon for code/JSON actions.
+ */
 const code = '<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 2 8 4 10"/><polyline points="12 6 14 8 12 10"/><line x1="9" y1="4" x2="7" y2="12"/></svg>';
+/**
+ * Icon for truncate actions.
+ */
 const trunc = '<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4 4 14 12 14 13 4"/><line x1="2" y1="4" x2="14" y2="4"/><path d="M6 4V2h4v2"/><line x1="8" y1="8" x2="8" y2="12"/></svg>';
 
 /*
@@ -1587,39 +1639,126 @@ function default_set_attr(data, type, value) {
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+/**
+ * The chat list container element.
+ */
 const chatList = gebi("chat-list");
+/**
+ * The chat upload button for loading conversations from JSON files.
+ */
 const chatUploadBtn = gebi("json-upload-input");
+/**
+ * The new chat button to start a new conversation.
+ */
 const newChatBtn = gebi("new-chat-btn");
+/**
+ * The sidebar container element.
+ */
 const sidebar = gebi("sidebar");
+/**
+ * The button to toggle sidebar visibility.
+ */
 const sidebarBtn = gebi("toggle-sidebar-btn");
+/**
+ * The header title showing the current chat name.
+ */
 const currentChatTitle = gebi("header-title");
+/**
+ * The model badge showing the current model (header).
+ */
 gebi("model-badge");
+/**
+ * The messages container element.
+ */
 const messages = gebi("messages");
+/**
+ * The input attachments container for displaying media attachments.
+ */
 const inputAttachments = gebi("input-attachments");
+/**
+ * Buttons for selecting who to post as (user, assistant, tool, system).
+ */
 const inputPostAsBtns = {
     user: gebi("post-as-user-btn"),
     assistant: gebi("post-as-assistant-btn"),
     tool: gebi("post-as-tool-btn"),
     system: gebi("post-as-system-btn")
 };
+/**
+ * Current role for posting messages.
+ */
 let inputPostAs = "user";
+/**
+ * The button to toggle manual mode.
+ */
 const manualToggleBtn = gebi("manual-toggle-btn");
+/**
+ * The hint element shown when manual mode is active.
+ */
 const inputHintManualMode = gebi("input-hint-manual-mode");
+/**
+ * Whether manual mode is active (AI does not auto-complete).
+ */
 let manualMode = false;
+/**
+ * The input shell container element.
+ */
 const inputShell = gebi("input-shell");
+/**
+ * The message input textarea.
+ */
 const inputMessage = gebi("message-input");
+/**
+ * The file input button for attaching files.
+ */
 const inputAttachBtn = gebi("file-input");
+/**
+ * The send button for submitting messages.
+ */
 const inputSendBtn = gebi("send-btn");
+/**
+ * The stop button for cancelling ongoing completions.
+ */
 const stopBtn = gebi("stop-btn");
+/**
+ * The model badge showing the current model.
+ */
 const modelBadge = gebi("model-badge");
+/**
+ * The image element in the lightbox viewer.
+ */
 const lightboxImg = gebi("lightbox-img");
+/**
+ * The lightbox container element.
+ */
 const lightbox = gebi("lightbox");
+/**
+ * The lightbox close button.
+ */
 const lightboxClose = gebi("lightbox-close");
+/**
+ * Settings UI elements.
+ */
 const settings = {
+    /**
+     * First settings button (in header).
+     */
     btn1: gebi("settings-btn"),
+    /**
+     * Second settings button.
+     */
     btn2: gebi("settings-btn2"),
+    /**
+     * Settings overlay panel.
+     */
     overlay: gebi("settings-overlay"),
+    /**
+     * Settings close button.
+     */
     close: gebi("settings-close-btn"),
+    /**
+     * Tools settings section.
+     */
     toolsSeg: gebi("cfg-tools"),
     /**
      * Model to use.
@@ -1630,7 +1769,7 @@ const settings = {
      */
     forceName: gebi("cfg-force-name"),
     /**
-     * Other request parameters.
+     * Other request parameters (JSON).
      */
     reqParams: gebi("cfg-req-parameters"),
     /**
@@ -1647,6 +1786,10 @@ let currentConversation = null;
  * conversation is switched while it's being drawn.
  */
 let cursor = null;
+/**
+ * Set the cursor element for streaming updates.
+ * @param to  The cursor element, or null to clear
+ */
 function setCursor(to) {
     cursor = to;
 }
@@ -1669,6 +1812,9 @@ manualToggleBtn.onclick = () => {
     manualToggleBtn.classList.toggle("active", manualMode);
     inputHintManualMode.classList.toggle("visible", manualMode);
 };
+/**
+ * Metadata for message entity types (label and icon).
+ */
 const entityMeta = {
     assistant: { label: 'Assistant', icon: assistant },
     user: { label: 'User', icon: user },
@@ -1676,7 +1822,7 @@ const entityMeta = {
     system: { label: 'System', icon: system }
 };
 /**
- * Auto-resize the input box.
+ * Auto-resize the input textarea based on its content.
  */
 function inputAutoResize() {
     inputMessage.style.height = "auto";
@@ -1692,7 +1838,7 @@ function markdown(target, text) {
     parser_end(parser$1);
 }
 // Sidebar toggle
-sidebarBtn.onclick = () => {
+sidebarBtn.onclick = (_) => {
     sidebar.classList.toggle("collapsed");
 };
 /**
@@ -1878,6 +2024,7 @@ function toggleCollapsible(ev) {
  * @param type  Type of collapsible box. "tool-use" is for the assistant using a
  *              tool, and "tool" is the tool itself.
  * @param labelSuffix  Suffix to add to the label, e.g., the specific tool.
+ * @returns Object containing the box element and body element
  */
 function mkCollapsible(type, labelSuffix = "") {
     const cls = type === "reasoning" ? "reasoning" : "tool-use";
@@ -1916,10 +2063,17 @@ function stop(fn) {
 function openSettings() {
     settings.overlay.classList.add("visible");
 }
+/**
+ * Close settings modal when clicking overlay.
+ * @param ev  Click event
+ */
 function closeSettings(ev) {
     if (ev.target === settings.overlay)
         closeSettingsDirect();
 }
+/**
+ * Close settings modal directly.
+ */
 function closeSettingsDirect() {
     settings.overlay.classList.remove('visible');
 }
@@ -1940,13 +2094,13 @@ currentChatTitle.onclick = () => {
     sel.removeAllRanges();
     sel.addRange(range);
 };
-currentChatTitle.onkeydown = ev => {
+currentChatTitle.onkeydown = (ev) => {
     if (ev.key === "Enter") {
         ev.preventDefault();
         currentChatTitle.blur();
     }
 };
-currentChatTitle.onblur = () => {
+currentChatTitle.onblur = (_) => {
     if (!currentChatTitle.classList.contains("editing"))
         return;
     currentChatTitle.classList.remove("editing");
@@ -1959,7 +2113,7 @@ currentChatTitle.onblur = () => {
     dispatch("conversation.name", { conv: currentConversation });
 };
 // Escape is the ultimate closer
-document.body.onkeydown = ev => {
+document.body.onkeydown = (ev) => {
     if (ev.key === "Escape") {
         ev.preventDefault();
         closeLightbox();
@@ -2009,7 +2163,11 @@ const conversations = await (async () => {
  * The buttons in the chat list for each conversation.
  */
 const conversationButtons = Object.create(null);
-// Make a chat list box
+/**
+ * Create a chat list box element for a conversation.
+ * @param conv  Conversation to create a box for
+ * @returns Object containing the box element and its sub-elements
+ */
 function chatListBox(conv) {
     const box = dce("div");
     box.className = "chat-item";
@@ -2218,7 +2376,7 @@ async function settingAddTool(tool) {
         tool.enabled = el.checked;
     };
     tool.enabled = el.checked;
-    events.addEventListener("tools-enabled-default", () => {
+    events.addEventListener("tools-enabled-default", (_) => {
         el.checked = settings.toolsEnabled.checked;
         el.dispatchEvent(new Event("change"));
     });
@@ -2285,6 +2443,12 @@ KAIL.registerTool = registerTool;
 KAIL.simpleRemoteTool = simpleRemoteTool;
 // Cache of images converted to lossy formats
 const lossyImageCache = new WeakMap();
+/**
+ * Convert an image to a lossy format (JPEG/WebP) for compatibility with
+ * models that have data size limits.
+ * @param image  Image to convert
+ * @returns The image, possibly in a lossy format
+ */
 async function lossyImage(image) {
     if (lossyImageCache.has(image))
         return lossyImageCache.get(image);
@@ -2340,7 +2504,11 @@ async function lossyImage(image) {
         return image;
     }
 }
-// Helper function to lossy-ify an entire conversation
+/**
+ * Convert all images in a conversation to lossy formats for compatibility.
+ * @param conv  Conversation to convert
+ * @returns Copy of conversation with lossy images
+ */
 async function lossyConversation(conv) {
     const ret = [];
     for (const c of conv) {
@@ -2363,8 +2531,12 @@ async function lossyConversation(conv) {
     }
     return ret;
 }
-/* Remove the data: URI header from audio and video data for llama.cpp
- * compatibility */
+/**
+ * Remove the data: URI header from audio and video data for llama.cpp
+ * compatibility.
+ * @param conv  Conversation to fix up
+ * @returns Copy of conversation with fixed up data URLs
+ */
 async function dataFixup(conv) {
     const ret = [];
     for (const c of conv) {
@@ -2462,7 +2634,11 @@ async function complete(conv) {
         }
     }
 }
-// Complete an assistant message (call the AI)
+/**
+ * Complete an assistant message (call the AI) and handle streaming response.
+ * @param conv  Conversation to complete
+ * @returns True if completion succeeded, false if cancelled or failed
+ */
 async function completeAssistant(conv) {
     var _a, e_1, _b, _c;
     const msg = conv.inProgress = {
@@ -2738,10 +2914,10 @@ async function completeAssistant(conv) {
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 const attachments = [];
-inputAttachBtn.onchange = _ => {
+inputAttachBtn.onchange = (_) => {
     for (const file of Array.from(inputAttachBtn.files)) {
         const rdr = new FileReader();
-        rdr.onload = _ => {
+        rdr.onload = (_) => {
             attachments.push(rdr.result);
             renderAttachments();
         };
@@ -2749,6 +2925,9 @@ inputAttachBtn.onchange = _ => {
     }
     inputAttachBtn.value = "";
 };
+/**
+ * Render the attachment thumbnails in the input area.
+ */
 function renderAttachments() {
     inputAttachments.innerHTML = "";
     attachments.forEach((data, idx) => {
@@ -2785,7 +2964,9 @@ function renderAttachments() {
     });
     inputAttachments.classList.toggle("has-items", attachments.length > 0);
 }
-// Send our input message
+/**
+ * Send the current input message.
+ */
 async function sendMessage() {
     const conv = currentConversation;
     if (conv.inProgress) {
@@ -2863,7 +3044,12 @@ inputMessage.onkeydown = function (ev) {
     }
 };
 inputSendBtn.onclick = sendMessage;
-// Download a message
+/**
+ * Download a message as a file.
+ * @param conv  Conversation the message belongs to
+ * @param msg  Message to download
+ * @param json  Whether to download as JSON (true) or plain text (false)
+ */
 function downloadMessage(conv, msg, json) {
     const name = `${conv.id}-${conv.messages.indexOf(msg)}.${json ? "json" : "txt"}`;
     let data;
@@ -2910,7 +3096,13 @@ events.addEventListener("click-msg-dl", (ev) => {
 events.addEventListener("click-msg-dl-json", (ev) => {
     downloadMessage(ev.detail.conv, ev.detail.msg, true);
 });
-// Edit this message
+/**
+ * Edit a message, replacing its content with an editable textarea.
+ * @param conv  Conversation the message belongs to
+ * @param msg  Message to edit
+ * @param box  Message box to replace with editor
+ * @param json  Whether to edit as JSON (true) or plain text (false)
+ */
 function editMessage(conv, msg, box, json) {
     box.body.innerHTML = "";
     box.action.style.display = "none";
@@ -3075,7 +3267,13 @@ events.addEventListener("click-msg-edit", (ev) => {
 events.addEventListener("click-msg-edit-json", (ev) => {
     editMessage(ev.detail.conv, ev.detail.msg, ev.detail.box, true);
 });
-// Delete this message, and possibly further messages
+/**
+ * Delete a message, and possibly all messages after it.
+ * @param conv  Conversation the message belongs to
+ * @param msg  Message to delete
+ * @param box  Message box to remove
+ * @param trunc  Whether to truncate (delete message and all after) or just delete this message
+ */
 async function deleteMessage(conv, msg, box, trunc) {
     const yes = confirm(`Are you sure? This message${trunc ? " and all later messages" : ""} will be deleted.`);
     if (!yes)
@@ -3117,6 +3315,12 @@ events.addEventListener("click-msg-trunc", (ev) => {
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+/**
+ * Tool function to set the name of the current conversation.
+ * @param chat  Conversation to rename
+ * @param args  JSON string with "name" property
+ * @returns Empty string on success
  */
 async function set_chat_name(chat, args) {
     const obj = JSON.parse(args);

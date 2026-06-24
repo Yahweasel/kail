@@ -92,6 +92,9 @@ export interface Conversation {
     inProgress?: Message;
 }
 
+/**
+ * Function type for client-side tools.
+ */
 export type ToolFunction =
     (conv: Conversation, arg: string) => Promise<string | MessageContent[]>;
 
