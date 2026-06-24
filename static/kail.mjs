@@ -2774,11 +2774,12 @@ async function completeAssistant(conv) {
                 const lines = input.split("\n");
                 input = lines.pop();
                 for (const line of lines) {
-                    if (!line)
+                    if (!line || line === ":")
                         continue;
                     const parts = /^data: *(.*)/.exec(line);
-                    if (!parts)
-                        throw Error(`Invalid data from completion server: ${line}`);
+                    if (!parts) {
+                        throw Error(`Invalid data from completion server: ${JSON.stringify(line)}`);
+                    }
                     if (parts[1][0] === "[")
                         continue;
                     const res = JSON.parse(parts[1]);

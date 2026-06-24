@@ -456,9 +456,13 @@ async function completeAssistant(conv: iface.Conversation) {
             const lines = input.split("\n");
             input = lines.pop()!;
             for (const line of lines) {
-                if (!line) continue;
+                if (!line || line === ":") continue;
                 const parts = /^data: *(.*)/.exec(line);
-                if (!parts) throw Error(`Invalid data from completion server: ${line}`);
+                if (!parts) {
+                    throw Error(
+                        `Invalid data from completion server: ${JSON.stringify(line)}`
+                    );
+                }
                 if (parts[1][0] === "[") continue;
                 const res = JSON.parse(parts[1]);
                 const delta = res.choices[0].delta;
