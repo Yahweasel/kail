@@ -98,10 +98,31 @@ export interface Conversation {
 }
 
 /**
+ * Option tool actions.
+ */
+export interface ToolAction {
+    /**
+     * The actual response.
+     */
+    response: string | MessageContent[];
+
+    /**
+     * To indicate that the tool changed previous messages in the conversation.
+     */
+    changedHistory?: boolean;
+}
+
+/**
+ * All responses a tool is allowed.
+ */
+export type ToolResponse = string | MessageContent[] | ToolAction;
+
+
+/**
  * Function type for client-side tools.
  */
 export type ToolFunction =
-    (conv: Conversation, arg: string) => Promise<string | MessageContent[]>;
+    (conv: Conversation, arg: string) => Promise<ToolResponse>;
 
 /**
  * Our side of tools: the actual function and its schema.

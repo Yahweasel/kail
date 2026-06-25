@@ -454,6 +454,30 @@ events.events.addEventListener("click-msg-edit-json", (ev: any) => {
 
 
 /**
+ * Change the hidden state of a message.
+ * @param conv  Conversation the message belongs to
+ * @param msg  The message to hide/unhide
+ * @param box  Message box to reformat
+ */
+async function toggleMessageHidden(
+    conv: iface.Conversation,
+    msg: iface.Message,
+    box: ReturnType<typeof ui.mkMsgBox>
+) {
+    if (msg.kail_hidden)
+        delete msg.kail_hidden;
+    else
+        msg.kail_hidden = true;
+    ui.mkMsgBox(conv, msg, {box: box.box});
+    await chats.convPush(conv, null);
+}
+
+events.events.addEventListener("click-msg-hidden-toggle", (ev: any) => {
+    toggleMessageHidden(ev.detail.conv, ev.detail.msg, ev.detail.box);
+});
+
+
+/**
  * Delete a message, and possibly all messages after it.
  * @param conv  Conversation the message belongs to
  * @param msg  Message to delete

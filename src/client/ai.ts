@@ -291,7 +291,15 @@ export async function complete(conv: iface.Conversation) {
                     ui.stop(() => res("ERROR: Canceled"));
                 });
 
-                msg.content = await Promise.race([p, stopP]);
+                const toolRes = await Promise.race([p, stopP]);
+                let changedHistory = false;
+                if ((<iface.ToolAction> toolRes).response) {
+                    const act = <iface.ToolAction> toolRes;
+                    msg.content = act.response;
+                    changedHistory = !!act.changedHistory;
+                } else {
+                    msg.content = <any> toolRes;
+                }
                 ui.stop(null);
 
                 /* MCP is allowed to send images in an alt format that we
@@ -312,13 +320,20 @@ export async function complete(conv: iface.Conversation) {
 
                 await chats.convPush(conv, msg);
 
-                // Now fix the box
-                if (loadingBox)
-                    loadingBox.box.remove();
-                if (ui.currentConversation === conv) {
-                    const box = ui.mkMsgBox(conv, msg);
-                    await box.load;
-                    ui.messages.scrollTop = ui.messages.scrollHeight;
+                if (changedHistory && ui.currentConversation === conv) {
+                    // Change all boxes
+                    ui.setCurrentConversation(conv);
+
+                } else {
+                    // Just fix the current one
+                    if (loadingBox)
+                        loadingBox.box.remove();
+                    if (ui.currentConversation === conv) {
+                        const box = ui.mkMsgBox(conv, msg);
+                        await box.load;
+                        ui.messages.scrollTop = ui.messages.scrollHeight;
+                    }
+
                 }
             }
 

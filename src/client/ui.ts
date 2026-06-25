@@ -366,11 +366,7 @@ export function mkMsgBox(
         actionBtns.editJSON.onclick = () => events.dispatch("click-msg-edit-json", detail);
         actionSep();
         // Hidden state toggle button
-        const hiddenBtn = actionBtn(icons.hidden, "hidden");
-        hiddenBtn.className += " hidden-toggle";
-        if (msg.kail_hidden) {
-            hiddenBtn.classList.add('active');
-        }
+        const hiddenBtn = actionBtn(icons.hidden, msg.kail_hidden ? "show" : "hide");
         hiddenBtn.onclick = () => events.dispatch("click-msg-hidden-toggle", detail);
         actionSep();
         actionBtns.trunc = actionBtn(icons.trunc, "trunc");

@@ -241,11 +241,10 @@ a:visited {
 
 /* Hidden messages (hidden from AI) */
 .msg-row.kail-hidden {
-  border: 1px dotted var(--text-muted);
+  border: 2px dotted var(--text-muted);
   border-radius: var(--radius-sm);
   margin: 8px 16px;
   padding: 10px 20px;
-  opacity: 0.7;
 }
 
 .msg-row.entity-assistant { --entity-color: var(--entity-assistant); --entity-bg: var(--entity-assistant-bg); }
@@ -294,10 +293,6 @@ a:visited {
 .msg-action-btn.active { color: var(--accent); }
 .msg-action-btn.danger:hover { color: var(--danger); background: var(--danger-dim); }
 .msg-action-btn svg { flex-shrink: 0; }
-
-/* Eye-slash icon for hidden toggle */
-.msg-action-btn.hidden-toggle svg { color: var(--text-secondary); }
-.msg-action-btn.hidden-toggle.active svg { color: var(--entity-tool); }
 
 /* Separator between action groups */
 .msg-actions-sep {
