@@ -19,6 +19,9 @@ $(ROLLUP): src/*/*.ts src/*/*/*.ts node_modules/.bin/rollup
 static/localforage.min.js: node_modules/.bin/rollup
 	cp node_modules/localforage/dist/localforage.min.js $@
 
+unbuild:
+	git checkout $(addprefix ./,$(ROLLUP))
+
 node_modules/.bin/rollup:
 	npm install
 
