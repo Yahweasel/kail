@@ -64,6 +64,13 @@ function toolFunctionProxy(target: string): iface.ToolFunction {
             proxyRes.pipe(res);
         });
 
+        req.socket.on("close", () => {
+            if (!res.writableEnded && !res.finished) {
+                proxyReq.socket?.destroy();
+                proxyReq.destroy();
+            }
+        });
+
         req.pipe(proxyReq);
         proxyReq.on("error", ex => {
             console.error(ex);

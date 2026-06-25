@@ -155,6 +155,13 @@ function toolFunctionProxy(target) {
             res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
             proxyRes.pipe(res);
         });
+        req.socket.on("close", () => {
+            var _a;
+            if (!res.writableEnded && !res.finished) {
+                (_a = proxyReq.socket) === null || _a === void 0 ? void 0 : _a.destroy();
+                proxyReq.destroy();
+            }
+        });
         req.pipe(proxyReq);
         proxyReq.on("error", ex => {
             console.error(ex);
