@@ -263,8 +263,13 @@ export async function complete(conv: iface.Conversation) {
                 };
 
                 // Make the message box early so that it doesn't seem stuck
-                const loadingBox = ui.mkMsgBox(conv, msg);
-                loadingBox.body.innerText = "...";
+                let loadingBox: ReturnType<typeof ui.mkMsgBox> | null = null;
+                if (ui.currentConversation === conv) {
+                    loadingBox = ui.mkMsgBox(conv, msg);
+                    loadingBox.body.innerText = "...";
+                    await loadingBox.load;
+                    ui.messages.scrollTop = ui.messages.scrollHeight;
+                }
 
                 const p = (async () => {
                     if (tool) {
@@ -285,11 +290,32 @@ export async function complete(conv: iface.Conversation) {
                 msg.content = await Promise.race([p, stopP]);
                 ui.stop(null);
 
+                /* MCP is allowed to send images in an alt format that we
+                 * don't/can't support. */
+                if (msg.content instanceof Array) {
+                    for (const partT of msg.content) {
+                        const part = <any> partT;
+                        if (part.type === "image") {
+                            part.type = "image_url";
+                            part.image_url = {
+                                url: `data:${part.mimeType};base64,${part.data}`
+                            };
+                            delete part.mimeType;
+                            delete part.data;
+                        }
+                    }
+                }
+
                 await chats.convPush(conv, msg);
 
                 // Now fix the box
-                loadingBox.box.remove();
-                ui.mkMsgBox(conv, msg);
+                if (loadingBox)
+                    loadingBox.box.remove();
+                if (ui.currentConversation === conv) {
+                    const box = ui.mkMsgBox(conv, msg);
+                    await box.load;
+                    ui.messages.scrollTop = ui.messages.scrollHeight;
+                }
             }
 
         } else {
@@ -374,8 +400,10 @@ async function completeAssistant(conv: iface.Conversation) {
         }
     }
 
-    if (conv === ui.currentConversation)
+    if (conv === ui.currentConversation) {
         getCursor();
+        ui.messages.scrollTop = ui.messages.scrollHeight;
+    }
 
 
     try {
@@ -405,7 +433,12 @@ async function completeAssistant(conv: iface.Conversation) {
                 req.tools = req.tools.filter(
                     (x: any) => x.function.name === "set_chat_name"
                 );
-                req.thinking_budget_tokens = 0;
+                req.thinking_budget_tokens =
+                    req.reasoning_budget_tokens =
+                    0;
+                req.chat_template_kwargs = {
+                    enable_thinking: false
+                };
             }
         }
 
@@ -414,6 +447,7 @@ async function completeAssistant(conv: iface.Conversation) {
             const reqParams = ui.settings.reqParams.value.trim();
             if (reqParams)
                 Object.assign(req, JSON.parse(reqParams));
+            console.log(req);
         }
 
 
@@ -561,8 +595,11 @@ async function completeAssistant(conv: iface.Conversation) {
                 }
 
                 // Conditionally keep it scrolled
-                if (scrolledToBottom)
+                if (scrolledToBottom) {
                     ui.messages.scrollTop = ui.messages.scrollHeight;
+                    await new Promise(res => setTimeout(res, 0));
+                    ui.messages.scrollTop = ui.messages.scrollHeight;
+                }
             }
         }
 
@@ -577,7 +614,6 @@ async function completeAssistant(conv: iface.Conversation) {
 
     ui.stop(null);
     ui.setCursor(null);
-    ui.messages.scrollTop = ui.messages.scrollTop;
 
     if (conv.inProgress) {
         const msg = conv.inProgress;
@@ -587,8 +623,11 @@ async function completeAssistant(conv: iface.Conversation) {
         if (box)
             box.box.remove();
 
-        if (ui.currentConversation === conv)
-            ui.mkMsgBox(conv, msg);
+        if (ui.currentConversation === conv) {
+            const box = ui.mkMsgBox(conv, msg);
+            await box.load;
+            ui.messages.scrollTop = ui.messages.scrollHeight;
+        }
 
         return true;
     }

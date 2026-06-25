@@ -1850,6 +1850,9 @@ sidebarBtn.onclick = (_) => {
 function mkMsgBox(conv, msg, opts = {}) {
     const box = opts.box || dce("div");
     let meta = entityMeta[msg.role] || entityMeta.assistant;
+    const loadSteps = [
+        new Promise(res => setTimeout(res, 0))
+    ];
     // Try to find what tool this is by looking earlier
     let suffix = "";
     if (msg.role === "tool") {
@@ -1888,7 +1891,8 @@ function mkMsgBox(conv, msg, opts = {}) {
         box,
         body,
         action,
-        actionBtns
+        actionBtns,
+        load: null
     };
     // Fill in the action buttons
     function actionBtn(svg, txt) {
@@ -1950,6 +1954,9 @@ function mkMsgBox(conv, msg, opts = {}) {
                 {
                     const img = dce("img");
                     img.className = "msg-image";
+                    loadSteps.push(new Promise(res => {
+                        img.onload = img.onerror = res;
+                    }));
                     img.src = part.image_url.url;
                     img.alt = "image";
                     body.appendChild(img);
@@ -1968,6 +1975,9 @@ function mkMsgBox(conv, msg, opts = {}) {
                 {
                     const video = dce("video");
                     video.controls = true;
+                    loadSteps.push(new Promise(res => {
+                        video.onload = video.onerror = res;
+                    }));
                     video.src = part.input_video.url;
                     body.appendChild(video);
                     break;
@@ -1981,10 +1991,9 @@ function mkMsgBox(conv, msg, opts = {}) {
             body.appendChild(tbox.box);
         }
     }
-    if (!opts.box) {
+    if (!opts.box)
         messages.appendChild(box);
-        messages.scrollTop = messages.scrollHeight;
-    }
+    ret.load = Promise.all(loadSteps);
     return ret;
 }
 // Show an image in the lightbox
@@ -2004,8 +2013,10 @@ lightbox.onclick = lightboxClose.onclick = closeLightbox;
 function setCurrentConversation(conv) {
     currentConversation = conv;
     messages.innerHTML = "";
+    const loadSteps = [];
     for (const message of conv.messages) {
-        mkMsgBox(conv, message);
+        const box = mkMsgBox(conv, message);
+        loadSteps.push(box.load);
     }
     let name = conv.name || (conv.id + "");
     if (!conv.name && name === "-1")
@@ -2013,6 +2024,10 @@ function setCurrentConversation(conv) {
     currentChatTitle.classList.remove("editing");
     currentChatTitle.contentEditable = "false";
     currentChatTitle.innerText = name;
+    (async () => {
+        await Promise.all(loadSteps);
+        messages.scrollTop = messages.scrollHeight;
+    })();
     inputMessage.select();
 }
 // Collapsible trigger
@@ -2602,8 +2617,13 @@ async function complete(conv) {
                     content: ""
                 };
                 // Make the message box early so that it doesn't seem stuck
-                const loadingBox = mkMsgBox(conv, msg);
-                loadingBox.body.innerText = "...";
+                let loadingBox = null;
+                if (currentConversation === conv) {
+                    loadingBox = mkMsgBox(conv, msg);
+                    loadingBox.body.innerText = "...";
+                    await loadingBox.load;
+                    messages.scrollTop = messages.scrollHeight;
+                }
                 const p = (async () => {
                     if (tool) {
                         try {
@@ -2622,10 +2642,30 @@ async function complete(conv) {
                 });
                 msg.content = await Promise.race([p, stopP]);
                 stop(null);
+                /* MCP is allowed to send images in an alt format that we
+                 * don't/can't support. */
+                if (msg.content instanceof Array) {
+                    for (const partT of msg.content) {
+                        const part = partT;
+                        if (part.type === "image") {
+                            part.type = "image_url";
+                            part.image_url = {
+                                url: `data:${part.mimeType};base64,${part.data}`
+                            };
+                            delete part.mimeType;
+                            delete part.data;
+                        }
+                    }
+                }
                 await convPush(conv, msg);
                 // Now fix the box
-                loadingBox.box.remove();
-                mkMsgBox(conv, msg);
+                if (loadingBox)
+                    loadingBox.box.remove();
+                if (currentConversation === conv) {
+                    const box = mkMsgBox(conv, msg);
+                    await box.load;
+                    messages.scrollTop = messages.scrollHeight;
+                }
             }
         }
         else {
@@ -2703,8 +2743,10 @@ async function completeAssistant(conv) {
             parser_write(smdParser, text);
         }
     }
-    if (conv === currentConversation)
+    if (conv === currentConversation) {
         getCursor();
+        messages.scrollTop = messages.scrollHeight;
+    }
     try {
         const inputMessages = await dataFixup(conv.messages);
         // Set up our query with the settings
@@ -2725,7 +2767,12 @@ async function completeAssistant(conv) {
                 /* It just used some other tool, so really *force it* to name
                  * the chat */
                 req.tools = req.tools.filter((x) => x.function.name === "set_chat_name");
-                req.thinking_budget_tokens = 0;
+                req.thinking_budget_tokens =
+                    req.reasoning_budget_tokens =
+                        0;
+                req.chat_template_kwargs = {
+                    enable_thinking: false
+                };
             }
         }
         // Other request parameters
@@ -2733,6 +2780,7 @@ async function completeAssistant(conv) {
             const reqParams = settings.reqParams.value.trim();
             if (reqParams)
                 Object.assign(req, JSON.parse(reqParams));
+            console.log(req);
         }
         // Prepare for stopping
         const abortC = new AbortController();
@@ -2864,8 +2912,11 @@ async function completeAssistant(conv) {
                         throw Error(JSON.stringify(delta));
                     }
                     // Conditionally keep it scrolled
-                    if (scrolledToBottom)
+                    if (scrolledToBottom) {
                         messages.scrollTop = messages.scrollHeight;
+                        await new Promise(res => setTimeout(res, 0));
+                        messages.scrollTop = messages.scrollHeight;
+                    }
                 }
             }
         }
@@ -2885,15 +2936,17 @@ async function completeAssistant(conv) {
     }
     stop(null);
     setCursor(null);
-    messages.scrollTop = messages.scrollTop;
     if (conv.inProgress) {
         const msg = conv.inProgress;
         delete conv.inProgress;
         await convPush(conv, msg);
         if (box)
             box.box.remove();
-        if (currentConversation === conv)
-            mkMsgBox(conv, msg);
+        if (currentConversation === conv) {
+            const box = mkMsgBox(conv, msg);
+            await box.load;
+            messages.scrollTop = messages.scrollHeight;
+        }
         return true;
     }
     return false;
@@ -3034,7 +3087,9 @@ async function sendMessage() {
     inputPostAsBtns.user.click();
     inputAutoResize();
     await convPush(conv, msg);
-    mkMsgBox(conv, msg);
+    const box = mkMsgBox(conv, msg);
+    await box.load;
+    messages.scrollTop = messages.scrollHeight;
     await complete(conv);
 }
 inputMessage.onkeydown = function (ev) {

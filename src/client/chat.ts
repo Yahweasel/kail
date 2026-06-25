@@ -161,7 +161,9 @@ async function sendMessage() {
 
     ui.inputAutoResize();
     await chats.convPush(conv, msg);
-    ui.mkMsgBox(conv, msg);
+    const box = ui.mkMsgBox(conv, msg);
+    await box.load;
+    ui.messages.scrollTop = ui.messages.scrollHeight;
     await ai.complete(conv);
 }
 

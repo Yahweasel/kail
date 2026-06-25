@@ -277,6 +277,9 @@ export function mkMsgBox(
     const box = opts.box || dce("div");
 
     let meta = entityMeta[msg.role] || entityMeta.assistant;
+    const loadSteps: Promise<unknown>[] = [
+        new Promise(res => setTimeout(res, 0))
+    ];
 
     // Try to find what tool this is by looking earlier
     let suffix = "";
@@ -320,7 +323,8 @@ export function mkMsgBox(
         box,
         body,
         action,
-        actionBtns
+        actionBtns,
+        load: <Promise<unknown>> <any> null
     };
 
     // Fill in the action buttons
@@ -394,6 +398,9 @@ export function mkMsgBox(
             {
                 const img = dce("img");
                 img.className = "msg-image";
+                loadSteps.push(new Promise(res => {
+                    img.onload = img.onerror = res;
+                }));
                 img.src = part.image_url.url;
                 img.alt = "image";
                 body.appendChild(img);
@@ -415,6 +422,9 @@ export function mkMsgBox(
             {
                 const video = dce("video");
                 video.controls = true;
+                loadSteps.push(new Promise(res => {
+                    video.onload = video.onerror = res;
+                }));
                 video.src = part.input_video.url;
                 body.appendChild(video);
                 break;
@@ -432,11 +442,10 @@ export function mkMsgBox(
         }
     }
 
-    if (!opts.box) {
+    if (!opts.box)
         messages.appendChild(box);
-        messages.scrollTop = messages.scrollHeight;
-    }
 
+    ret.load = Promise.all(loadSteps);
     return ret;
 }
 
@@ -459,8 +468,10 @@ lightbox.onclick = lightboxClose.onclick = closeLightbox;
 export function setCurrentConversation(conv: iface.Conversation) {
     currentConversation = conv;
     messages.innerHTML = "";
+    const loadSteps: Promise<unknown>[] = [];
     for (const message of conv.messages) {
-        mkMsgBox(conv, message);
+        const box = mkMsgBox(conv, message);
+        loadSteps.push(box.load);
     }
 
     let name = conv.name || (conv.id + "");
@@ -470,6 +481,11 @@ export function setCurrentConversation(conv: iface.Conversation) {
     currentChatTitle.classList.remove("editing");
     currentChatTitle.contentEditable = "false";
     currentChatTitle.innerText = name;
+
+    (async () => {
+        await Promise.all(loadSteps);
+        messages.scrollTop = messages.scrollHeight;
+    })();
 
     inputMessage.select();
 }
