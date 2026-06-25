@@ -239,6 +239,15 @@ a:visited {
 }
 .msg-row:hover { background: rgba(255,255,255,0.015); }
 
+/* Hidden messages (hidden from AI) */
+.msg-row.kail-hidden {
+  border: 1px dotted var(--text-muted);
+  border-radius: var(--radius-sm);
+  margin: 8px 16px;
+  padding: 10px 20px;
+  opacity: 0.7;
+}
+
 .msg-row.entity-assistant { --entity-color: var(--entity-assistant); --entity-bg: var(--entity-assistant-bg); }
 .msg-row.entity-user      { --entity-color: var(--entity-user);   --entity-bg: var(--entity-user-bg); }
 .msg-row.entity-tool      { --entity-color: var(--entity-tool);   --entity-bg: var(--entity-tool-bg); }
@@ -285,6 +294,10 @@ a:visited {
 .msg-action-btn.active { color: var(--accent); }
 .msg-action-btn.danger:hover { color: var(--danger); background: var(--danger-dim); }
 .msg-action-btn svg { flex-shrink: 0; }
+
+/* Eye-slash icon for hidden toggle */
+.msg-action-btn.hidden-toggle svg { color: var(--text-secondary); }
+.msg-action-btn.hidden-toggle.active svg { color: var(--entity-tool); }
 
 /* Separator between action groups */
 .msg-actions-sep {

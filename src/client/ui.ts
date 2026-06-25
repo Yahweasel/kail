@@ -298,6 +298,8 @@ export function mkMsgBox(
     }
 
     box.className = `msg-row entity-${msg.role}`;
+    if (msg.kail_hidden)
+        box.classList.add('kail-hidden');
     box.innerHTML = `
         <div class="msg-avatar">${meta.icon}</div>
         <div class="msg-content">
@@ -362,6 +364,14 @@ export function mkMsgBox(
             (opts.text !== false) ? "JSON" : "edit"
         );
         actionBtns.editJSON.onclick = () => events.dispatch("click-msg-edit-json", detail);
+        actionSep();
+        // Hidden state toggle button
+        const hiddenBtn = actionBtn(icons.hidden, "hidden");
+        hiddenBtn.className += " hidden-toggle";
+        if (msg.kail_hidden) {
+            hiddenBtn.classList.add('active');
+        }
+        hiddenBtn.onclick = () => events.dispatch("click-msg-hidden-toggle", detail);
         actionSep();
         actionBtns.trunc = actionBtn(icons.trunc, "trunc");
         actionBtns.trunc.onclick = () => events.dispatch("click-msg-trunc", detail);

@@ -68,3 +68,7 @@ export const code = '<svg width="11" height="11" viewBox="0 0 16 16" fill="none"
  * Icon for truncate actions.
  */
 export const trunc = '<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4 4 14 12 14 13 4"/><line x1="2" y1="4" x2="14" y2="4"/><path d="M6 4V2h4v2"/><line x1="8" y1="8" x2="8" y2="12"/></svg>';
+/**
+ * Icon for toggling hidden state (eye with slash).
+ */
+export const hidden = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l14 14"/><path d="M10.5 4.2a6.9 6.9 0 0 1 3.9 3.8 9 9 0 0 1-1.2 2.1"/><path d="M3.5 3.5A9 9 0 0 0 1 8a6.9 6.9 0 0 0 1.1 2"/><circle cx="8" cy="8" r="3"/><line x1="8" y1="8" x2="8" y2="8.01"/></svg>';
