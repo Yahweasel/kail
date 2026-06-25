@@ -129,6 +129,10 @@ const code = '<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke
  * Icon for truncate actions.
  */
 const trunc = '<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4 4 14 12 14 13 4"/><line x1="2" y1="4" x2="14" y2="4"/><path d="M6 4V2h4v2"/><line x1="8" y1="8" x2="8" y2="12"/></svg>';
+/**
+ * Icon for toggling hidden state (eye with slash).
+ */
+const hidden = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l14 14"/><path d="M10.5 4.2a6.9 6.9 0 0 1 3.9 3.8 9 9 0 0 1-1.2 2.1"/><path d="M3.5 3.5A9 9 0 0 0 1 8a6.9 6.9 0 0 0 1.1 2"/><circle cx="8" cy="8" r="3"/><line x1="8" y1="8" x2="8" y2="8.01"/></svg>';
 
 /*
 Streaming Markdown Parser and Renderer
@@ -1868,6 +1872,8 @@ function mkMsgBox(conv, msg, opts = {}) {
         }
     }
     box.className = `msg-row entity-${msg.role}`;
+    if (msg.kail_hidden)
+        box.classList.add('kail-hidden');
     box.innerHTML = `
         <div class="msg-avatar">${meta.icon}</div>
         <div class="msg-content">
@@ -1922,6 +1928,10 @@ function mkMsgBox(conv, msg, opts = {}) {
         }
         actionBtns.editJSON = actionBtn((opts.text !== false) ? code : edit, (opts.text !== false) ? "JSON" : "edit");
         actionBtns.editJSON.onclick = () => dispatch("click-msg-edit-json", detail);
+        actionSep();
+        // Hidden state toggle button
+        const hiddenBtn = actionBtn(hidden, msg.kail_hidden ? "show" : "hide");
+        hiddenBtn.onclick = () => dispatch("click-msg-hidden-toggle", detail);
         actionSep();
         actionBtns.trunc = actionBtn(trunc, "trunc");
         actionBtns.trunc.onclick = () => dispatch("click-msg-trunc", detail);
@@ -2643,7 +2653,16 @@ async function complete(conv) {
                 const stopP = new Promise(res => {
                     stop(() => res("ERROR: Canceled"));
                 });
-                msg.content = await Promise.race([p, stopP]);
+                const toolRes = await Promise.race([p, stopP]);
+                let changedHistory = false;
+                if (toolRes.response) {
+                    const act = toolRes;
+                    msg.content = act.response;
+                    changedHistory = !!act.changedHistory;
+                }
+                else {
+                    msg.content = toolRes;
+                }
                 stop(null);
                 /* MCP is allowed to send images in an alt format that we
                  * don't/can't support. */
@@ -2661,13 +2680,19 @@ async function complete(conv) {
                     }
                 }
                 await convPush(conv, msg);
-                // Now fix the box
-                if (loadingBox)
-                    loadingBox.box.remove();
-                if (currentConversation === conv) {
-                    const box = mkMsgBox(conv, msg);
-                    await box.load;
-                    messages.scrollTop = messages.scrollHeight;
+                if (changedHistory && currentConversation === conv) {
+                    // Change all boxes
+                    setCurrentConversation(conv);
+                }
+                else {
+                    // Just fix the current one
+                    if (loadingBox)
+                        loadingBox.box.remove();
+                    if (currentConversation === conv) {
+                        const box = mkMsgBox(conv, msg);
+                        await box.load;
+                        messages.scrollTop = messages.scrollHeight;
+                    }
                 }
             }
         }
@@ -3325,6 +3350,23 @@ events.addEventListener("click-msg-edit", (ev) => {
 });
 events.addEventListener("click-msg-edit-json", (ev) => {
     editMessage(ev.detail.conv, ev.detail.msg, ev.detail.box, true);
+});
+/**
+ * Change the hidden state of a message.
+ * @param conv  Conversation the message belongs to
+ * @param msg  The message to hide/unhide
+ * @param box  Message box to reformat
+ */
+async function toggleMessageHidden(conv, msg, box) {
+    if (msg.kail_hidden)
+        delete msg.kail_hidden;
+    else
+        msg.kail_hidden = true;
+    mkMsgBox(conv, msg, { box: box.box });
+    await convPush(conv, null);
+}
+events.addEventListener("click-msg-hidden-toggle", (ev) => {
+    toggleMessageHidden(ev.detail.conv, ev.detail.msg, ev.detail.box);
 });
 /**
  * Delete a message, and possibly all messages after it.
