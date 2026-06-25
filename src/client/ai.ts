@@ -175,7 +175,8 @@ async function lossyConversation(conv: iface.Message[]): Promise<iface.Message[]
 }
 
 /**
- * Remove the data: URI header from audio and video data for llama.cpp
+ * Fix up data in messages for compatibility. Removes hidden messages, and
+ * removes data: URI headers from audio and video data for llama.cpp
  * compatibility.
  * @param conv  Conversation to fix up
  * @returns Copy of conversation with fixed up data URLs
@@ -184,6 +185,9 @@ async function dataFixup(conv: iface.Message[]): Promise<iface.Message[]> {
     const ret: iface.Message[] = [];
 
     for (const c of conv) {
+        if (c.kail_hidden)
+            continue;
+
         if (
             typeof c.content === "string" ||
             c.content.findIndex(x => x.type.startsWith("input_")) < 0

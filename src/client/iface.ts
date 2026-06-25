@@ -23,6 +23,11 @@ export interface Message {
     content: string | MessageContent[];
     tool_calls?: FunctionCall[];
     tool_call_id?: string;
+
+    /**
+     * A custom addition meaning “hide this message”.
+     */
+    kail_hidden?: boolean;
 }
 
 /**
