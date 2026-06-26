@@ -25,6 +25,11 @@ export interface Message {
     tool_call_id?: string;
 
     /**
+     * Arbitrary metadata for tools to use.
+     */
+    _meta?: any;
+
+    /**
      * A custom addition meaning “hide this message”.
      */
     kail_hidden?: boolean;
@@ -105,6 +110,11 @@ export interface ToolAction {
      * The actual response.
      */
     response: string | MessageContent[];
+
+    /**
+     * To set `_meta` on the response.
+     */
+    meta?: any;
 
     /**
      * To indicate that the tool changed previous messages in the conversation.

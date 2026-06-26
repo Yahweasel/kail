@@ -175,23 +175,34 @@ async function lossyConversation(conv: iface.Message[]): Promise<iface.Message[]
 }
 
 /**
- * Fix up data in messages for compatibility. Removes hidden messages, and
- * removes data: URI headers from audio and video data for llama.cpp
- * compatibility.
+ * Fix up data in messages for compatibility. Removes hidden messages and
+ * metadata, and removes data: URI headers from audio and video data for
+ * llama.cpp compatibility.
  * @param conv  Conversation to fix up
  * @returns Copy of conversation with fixed up data URLs
  */
 async function dataFixup(conv: iface.Message[]): Promise<iface.Message[]> {
     const ret: iface.Message[] = [];
 
-    for (const c of conv) {
-        if (c.kail_hidden)
-            continue;
+    let skipCount = 0;
+    function skipMsg() {
+        if (skipCount <= 0)
+            return;
+        ret.push({
+            role: "user",
+            content: `SYSTEM MESSAGE: ${skipCount} messages have been elided for context room.`
+        });
+        skipCount = 0;
+    }
 
-        if (
-            typeof c.content === "string" ||
-            c.content.findIndex(x => x.type.startsWith("input_")) < 0
-        ) {
+    for (const c of conv) {
+        if (c.kail_hidden) {
+            skipCount++;
+            continue;
+        }
+        skipMsg();
+
+        if (typeof c.content === "string") {
             ret.push(c);
             continue;
         }
@@ -201,30 +212,36 @@ async function dataFixup(conv: iface.Message[]): Promise<iface.Message[]> {
         cc.content = [];
 
         for (const part of c.content) {
-            let url: string;
-            if (part.type === "input_audio") {
-                url = part.input_audio.url;
-            } else if (part.type === "input_video") {
-                url = part.input_video.url;
-            } else {
-                continue;
-            }
-            const data = {
-                data: url.slice(url.indexOf(",") + 1)
-            };
-
             const pp = <any> {};
             Object.assign(pp, part);
-            if (part.type === "input_audio")
-                pp.input_audio = data;
-            else if (part.type === "input_video")
-                pp.input_video = data;
-
+            delete pp._meta;
             cc.content.push(pp);
+
+            if (
+                part.type === "input_audio" ||
+                part.type === "input_video"
+            ) {
+                let url: string;
+                if (part.type === "input_audio")
+                    url = part.input_audio.url;
+                else
+                    url = part.input_video.url;
+                const data = {
+                    data: url.slice(url.indexOf(",") + 1)
+                };
+
+                if (part.type === "input_audio")
+                    pp.input_audio = data;
+                else
+                    pp.input_video = data;
+            }
+
         }
 
         ret.push(cc);
     }
+
+    skipMsg();
 
     return ret;
 }
@@ -296,6 +313,8 @@ export async function complete(conv: iface.Conversation) {
                 if ((<iface.ToolAction> toolRes).response) {
                     const act = <iface.ToolAction> toolRes;
                     msg.content = act.response;
+                    if (act.meta)
+                        msg._meta = act.meta;
                     changedHistory = !!act.changedHistory;
                 } else {
                     msg.content = <any> toolRes;
@@ -466,7 +485,6 @@ async function completeAssistant(conv: iface.Conversation) {
             const reqParams = ui.settings.reqParams.value.trim();
             if (reqParams)
                 Object.assign(req, JSON.parse(reqParams));
-            console.log(req);
         }
 
 

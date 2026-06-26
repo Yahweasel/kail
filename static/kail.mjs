@@ -2557,19 +2557,31 @@ async function lossyConversation(conv) {
     return ret;
 }
 /**
- * Fix up data in messages for compatibility. Removes hidden messages, and
- * removes data: URI headers from audio and video data for llama.cpp
- * compatibility.
+ * Fix up data in messages for compatibility. Removes hidden messages and
+ * metadata, and removes data: URI headers from audio and video data for
+ * llama.cpp compatibility.
  * @param conv  Conversation to fix up
  * @returns Copy of conversation with fixed up data URLs
  */
 async function dataFixup(conv) {
     const ret = [];
+    let skipCount = 0;
+    function skipMsg() {
+        if (skipCount <= 0)
+            return;
+        ret.push({
+            role: "user",
+            content: `SYSTEM MESSAGE: ${skipCount} messages have been elided for context room.`
+        });
+        skipCount = 0;
+    }
     for (const c of conv) {
-        if (c.kail_hidden)
+        if (c.kail_hidden) {
+            skipCount++;
             continue;
-        if (typeof c.content === "string" ||
-            c.content.findIndex(x => x.type.startsWith("input_")) < 0) {
+        }
+        skipMsg();
+        if (typeof c.content === "string") {
             ret.push(c);
             continue;
         }
@@ -2577,29 +2589,29 @@ async function dataFixup(conv) {
         Object.assign(cc, c);
         cc.content = [];
         for (const part of c.content) {
-            let url;
-            if (part.type === "input_audio") {
-                url = part.input_audio.url;
-            }
-            else if (part.type === "input_video") {
-                url = part.input_video.url;
-            }
-            else {
-                continue;
-            }
-            const data = {
-                data: url.slice(url.indexOf(",") + 1)
-            };
             const pp = {};
             Object.assign(pp, part);
-            if (part.type === "input_audio")
-                pp.input_audio = data;
-            else if (part.type === "input_video")
-                pp.input_video = data;
+            delete pp._meta;
             cc.content.push(pp);
+            if (part.type === "input_audio" ||
+                part.type === "input_video") {
+                let url;
+                if (part.type === "input_audio")
+                    url = part.input_audio.url;
+                else
+                    url = part.input_video.url;
+                const data = {
+                    data: url.slice(url.indexOf(",") + 1)
+                };
+                if (part.type === "input_audio")
+                    pp.input_audio = data;
+                else
+                    pp.input_video = data;
+            }
         }
         ret.push(cc);
     }
+    skipMsg();
     return ret;
 }
 /**
@@ -2658,6 +2670,8 @@ async function complete(conv) {
                 if (toolRes.response) {
                     const act = toolRes;
                     msg.content = act.response;
+                    if (act.meta)
+                        msg._meta = act.meta;
                     changedHistory = !!act.changedHistory;
                 }
                 else {
@@ -2808,7 +2822,6 @@ async function completeAssistant(conv) {
             const reqParams = settings.reqParams.value.trim();
             if (reqParams)
                 Object.assign(req, JSON.parse(reqParams));
-            console.log(req);
         }
         // Prepare for stopping
         const abortC = new AbortController();
