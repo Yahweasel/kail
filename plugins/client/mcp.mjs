@@ -32,20 +32,25 @@ async function mcpTool(url, arg) {
     });
     return await f.json();
 }
-for (const url in list) {
-    const tool = list[url];
-    KAIL.registerTool({
-        name: tool.name,
-        enabled: true,
-        function: (_, arg) => mcpTool(url, arg),
-        schema: {
-            type: "function",
-            function: {
-                name: tool.name,
-                description: tool.description,
-                parameters: tool.inputSchema,
-                strict: true
+for (const groupName in list) {
+    const groupList = list[groupName];
+    const groupId = `mcp_${groupName}`;
+    KAIL.registerToolGroup(groupId, `MCP: ${groupName}`);
+    for (const url in groupList) {
+        const tool = groupList[url];
+        KAIL.registerTool(groupId, {
+            name: tool.name,
+            enabled: true,
+            function: (_, arg) => mcpTool(url, arg),
+            schema: {
+                type: "function",
+                function: {
+                    name: tool.name,
+                    description: tool.description,
+                    parameters: tool.inputSchema,
+                    strict: true
+                }
             }
-        }
-    });
+        });
+    }
 }

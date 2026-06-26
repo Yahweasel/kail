@@ -1765,6 +1765,10 @@ const settings = {
      */
     toolsSeg: gebi("cfg-tools"),
     /**
+     * Settings sections for each tool group.
+     */
+    toolGroupSegs: Object.create(null),
+    /**
      * Model to use.
      */
     model: gebi("model-select"),
@@ -2382,7 +2386,36 @@ await settingCheckbox(settings.forceName, "force-name");
 await settingValue(settings.reqParams, "req-parameters");
 await settingCheckbox(settings.toolsEnabled, "tools-enabled");
 // Add a toggle for a tool
-async function settingAddTool(tool) {
+async function settingAddTool(groupId, group, tool) {
+    // First set up the group box
+    let groupBox;
+    let groupDefaultChk;
+    if (!settings.toolGroupSegs[groupId]) {
+        groupBox = settings.toolGroupSegs[groupId] = dce("div");
+        groupBox.innerHTML = `
+            <div class="settings-section-title">Tool: ${group.name}</div>
+        `;
+        settings.toolsSeg.appendChild(groupBox);
+        const groupDefault = dce("div");
+        groupDefault.className = "settings-row";
+        groupDefault.innerHTML = `
+            <div class="settings-row-info">
+                <div class="settings-row-label">Default for ${group.name.replace(/[^a-zA-Z0-9: _-]/g, "_")}</div>
+                <div class="settings-row-desc">Enable this tool group by default?</div>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" ${settings.toolsEnabled.checked ? "checked " : ""}/>
+                <span class="toggle-slider"></span>
+            </label>
+        `;
+        groupBox.appendChild(groupDefault);
+        groupDefaultChk = groupDefault.children[1].children[0];
+        await settingCheckbox(groupDefaultChk, `tool-group-enabled-${groupId}`);
+    }
+    else {
+        groupBox = settings.toolGroupSegs[groupId];
+        groupDefaultChk = groupBox.children[1].children[1].children[0];
+    }
     const box = dce("div");
     box.className = "settings-row";
     box.innerHTML = `
@@ -2390,11 +2423,11 @@ async function settingAddTool(tool) {
             <div class="settings-row-label">${tool.name.replace(/[^a-zA-Z0-9_-]/g, "_")}</div>
         </div>
         <label class="toggle">
-            <input type="checkbox" ${settings.toolsEnabled.checked ? "checked " : ""}/>
+            <input type="checkbox" ${groupDefaultChk.checked ? "checked " : ""}/>
             <span class="toggle-slider"></span>
         </label>
     `;
-    settings.toolsSeg.appendChild(box);
+    groupBox.appendChild(box);
     const el = box.children[1].children[0];
     await settingCheckbox(el, `tool-enabled-${tool.name}`);
     el.onchange = () => {
@@ -2404,10 +2437,16 @@ async function settingAddTool(tool) {
     events.addEventListener("tools-enabled-default", (_) => {
         el.checked = settings.toolsEnabled.checked;
         el.dispatchEvent(new Event("change"));
+        groupDefaultChk.checked = settings.toolsEnabled.checked;
+        groupDefaultChk.dispatchEvent(new Event("change"));
+    });
+    groupDefaultChk.addEventListener("change", _ => {
+        el.checked = groupDefaultChk.checked;
+        el.dispatchEvent(new Event("change"));
     });
 }
 events.addEventListener("register-tool", (ev) => {
-    settingAddTool(ev.detail.tool);
+    settingAddTool(ev.detail.groupId, ev.detail.group, ev.detail.tool);
 });
 // Change all tools when the default is changed
 settings.toolsEnabled.onchange = () => {
@@ -2430,16 +2469,45 @@ settings.toolsEnabled.onchange = () => {
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 /**
+ * Tool groups, to be filled in by other sources.
+ */
+const toolGroups = Object.create(null);
+/**
  * Tools, to be filled in by other sources.
  */
 const tools = Object.create(null);
 /**
+ * Function to register a tool group.
+ * @param id  Internal ID for the group
+ * @param name  Public name for the group
+ */
+function registerToolGroup(id, name) {
+    if (toolGroups[id])
+        return;
+    toolGroups[id] = { name, tools: Object.create(null) };
+}
+/**
  * Function to register a tool (add it to the tools list).
+ * @param group  The group to register the tool in
  * @param tool  Tool to register
  */
-function registerTool(tool) {
-    tools[tool.name] = tool;
-    dispatch("register-tool", { tool });
+function registerTool(group, tool) {
+    registerToolGroup(group, group);
+    toolGroups[group].tools[tool.name] = tool;
+    // Try variations of the name for the registered tool
+    let tryName = tool.name;
+    if (tools[tryName])
+        tryName = `${group}_${tool.name}`;
+    let idx = 2;
+    while (tools[tryName])
+        tryName = `${group}_${tool.name}_${idx++}`;
+    // And register it with the chosen name
+    tools[tryName] = tool;
+    tool.name = tryName;
+    tool.schema.function.name = tryName;
+    dispatch("register-tool", {
+        groupId: group, group: toolGroups[group], tool
+    });
 }
 /**
  * Create a simple tool function for a tool handled by the server.
@@ -2463,7 +2531,9 @@ function simpleRemoteTool(name) {
     };
 }
 globalThis.KAIL = globalThis.KAIL || {};
+KAIL.toolGroups = toolGroups;
 KAIL.tools = tools;
+KAIL.registerToolGroup = registerToolGroup;
 KAIL.registerTool = registerTool;
 KAIL.simpleRemoteTool = simpleRemoteTool;
 // Cache of images converted to lossy formats
@@ -3442,7 +3512,8 @@ async function set_chat_name(chat, args) {
     dispatch("conversation.name", { conv: chat });
     return "";
 }
-registerTool({
+registerToolGroup("kail", "KAIL");
+registerTool("kail", {
     name: "set_chat_name",
     enabled: true,
     function: set_chat_name,

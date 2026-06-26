@@ -31,7 +31,9 @@ async function set_chat_name(chat: iface.Conversation, args: string) {
     return "";
 }
 
-ai.registerTool({
+ai.registerToolGroup("kail", "KAIL");
+
+ai.registerTool("kail", {
     name: "set_chat_name",
     enabled: true,
     function: set_chat_name,

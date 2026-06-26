@@ -19,10 +19,9 @@ import * as iface from "../client/iface";
 import type * as mcp from "@modelcontextprotocol/sdk/client/index.js";
 
 // Get the list of MCP endpoints from the server
-const list: Record<
-    string,
+const list: Record<string, Record<string,
     Awaited<ReturnType<typeof mcp.Client.prototype.listTools>>["tools"][0]
-> = await (async () => {
+>> = await (async () => {
     const f = await fetch("/tools/mcp");
     return await f.json();
 })();
@@ -44,20 +43,27 @@ async function mcpTool(url: string, arg: string) {
 
 // Register each tool
 declare let KAIL: iface.KAIL;
-for (const url in list) {
-    const tool = list[url];
-    KAIL.registerTool({
-        name: tool.name,
-        enabled: true,
-        function: (_: iface.Conversation, arg: string) => mcpTool(url, arg),
-        schema: {
-            type: "function",
-            function: {
-                name: tool.name,
-                description: tool.description,
-                parameters: tool.inputSchema,
-                strict: true
+for (const groupName in list) {
+    const groupList = list[groupName];
+    const groupId = `mcp_${groupName}`;
+
+    KAIL.registerToolGroup(groupId, `MCP: ${groupName}`);
+
+    for (const url in groupList) {
+        const tool = groupList[url];
+        KAIL.registerTool(groupId, {
+            name: tool.name,
+            enabled: true,
+            function: (_: iface.Conversation, arg: string) => mcpTool(url, arg),
+            schema: {
+                type: "function",
+                function: {
+                    name: tool.name,
+                    description: tool.description,
+                    parameters: tool.inputSchema,
+                    strict: true
+                }
             }
-        }
-    });
+        });
+    }
 }

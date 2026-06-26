@@ -145,9 +145,26 @@ export interface Tool {
 }
 
 /**
+ * A tool group. Used only for UI clarity.
+ */
+export interface ToolGroup {
+    /**
+     * The user-visible name, which might not be the internal ID.
+     */
+    name: string;
+
+    /**
+     * The tools in this group.
+     */
+    tools: Record<string, Tool>;
+}
+
+/**
  * The public interface for plugins, under the global name `KAIL`.
  */
 export interface KAIL {
+    toolGroups: Record<string, ToolGroup>;
     tools: Record<string, Tool>;
-    registerTool: (tool: Tool) => unknown;
+    registerToolGroup: (id: string, name: string) => unknown;
+    registerTool: (group: string, tool: Tool) => unknown;
 };

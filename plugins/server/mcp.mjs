@@ -69,8 +69,9 @@ async function mcpTool(req, res) {
         const list = Object.create(null);
         for (const name1 in mcpServers) {
             const group = mcpServers[name1];
+            list[name1] = Object.create(null);
             for (const name2 in group.tools)
-                list[`${name1}/${name2}`] = group.tools[name2];
+                list[name1][`${name1}/${name2}`] = group.tools[name2];
         }
         res.writeHead(200, { "content-type": "application/json" });
         res.end(JSON.stringify(list));

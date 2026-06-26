@@ -23,17 +23,52 @@ import * as ui from "./ui";
 import * as smd from "streaming-markdown";
 
 /**
+ * Tool groups, to be filled in by other sources.
+ */
+export const toolGroups: Record<string, iface.ToolGroup> = Object.create(null);
+
+/**
  * Tools, to be filled in by other sources.
  */
 export const tools: Record<string, iface.Tool> = Object.create(null);
 
 /**
+ * Function to register a tool group.
+ * @param id  Internal ID for the group
+ * @param name  Public name for the group
+ */
+export function registerToolGroup(id: string, name: string) {
+    if (toolGroups[id])
+        return;
+    toolGroups[id] = {name, tools: Object.create(null)};
+}
+
+
+/**
  * Function to register a tool (add it to the tools list).
+ * @param group  The group to register the tool in
  * @param tool  Tool to register
  */
-export function registerTool(tool: iface.Tool) {
-    tools[tool.name] = tool;
-    events.dispatch("register-tool", {tool});
+export function registerTool(group: string, tool: iface.Tool) {
+    registerToolGroup(group, group);
+    toolGroups[group].tools[tool.name] = tool;
+
+    // Try variations of the name for the registered tool
+    let tryName = tool.name;
+    if (tools[tryName])
+        tryName = `${group}_${tool.name}`;
+    let idx = 2;
+    while (tools[tryName])
+        tryName = `${group}_${tool.name}_${idx++}`;
+
+    // And register it with the chosen name
+    tools[tryName] = tool;
+    tool.name = tryName;
+    tool.schema.function.name = tryName;
+
+    events.dispatch("register-tool", {
+        groupId: group, group: toolGroups[group], tool
+    });
 }
 
 /**
@@ -59,7 +94,9 @@ export function simpleRemoteTool(name: string): iface.ToolFunction {
 
 (<any> globalThis).KAIL = (<any> globalThis).KAIL || {};
 declare let KAIL: iface.KAIL;
+KAIL.toolGroups = toolGroups;
 KAIL.tools = tools;
+KAIL.registerToolGroup = registerToolGroup;
 KAIL.registerTool = registerTool;
 (<any> KAIL).simpleRemoteTool = simpleRemoteTool;
 

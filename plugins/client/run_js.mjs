@@ -164,7 +164,8 @@ async function jsTool(conv, arg) {
             return JSON.stringify(wRet.ret);
     }
 }
-KAIL.registerTool({
+KAIL.registerToolGroup("run_js", "Run JavaScript");
+KAIL.registerTool("run_js", {
     name: "run_js",
     enabled: true,
     function: jsTool,

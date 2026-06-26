@@ -290,7 +290,41 @@ await settingCheckbox(ui.settings.toolsEnabled, "tools-enabled");
 
 
 // Add a toggle for a tool
-async function settingAddTool(tool: iface.Tool) {
+async function settingAddTool(
+    groupId: string, group: iface.ToolGroup, tool: iface.Tool
+) {
+    // First set up the group box
+    let groupBox: HTMLElement;
+    let groupDefaultChk: HTMLInputElement;
+    if (!ui.settings.toolGroupSegs[groupId]) {
+        groupBox = ui.settings.toolGroupSegs[groupId] = dce("div");
+        groupBox.innerHTML = `
+            <div class="settings-section-title">Tool: ${group.name}</div>
+        `;
+        ui.settings.toolsSeg.appendChild(groupBox);
+
+        const groupDefault = dce("div");
+        groupDefault.className = "settings-row";
+        groupDefault.innerHTML = `
+            <div class="settings-row-info">
+                <div class="settings-row-label">Default for ${group.name.replace(/[^a-zA-Z0-9: _-]/g, "_")}</div>
+                <div class="settings-row-desc">Enable this tool group by default?</div>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" ${ui.settings.toolsEnabled.checked ? "checked " : ""}/>
+                <span class="toggle-slider"></span>
+            </label>
+        `;
+        groupBox.appendChild(groupDefault);
+
+        groupDefaultChk = <HTMLInputElement> groupDefault.children[1].children[0];
+        await settingCheckbox(groupDefaultChk, `tool-group-enabled-${groupId}`);
+
+    } else {
+        groupBox = ui.settings.toolGroupSegs[groupId];
+        groupDefaultChk = <HTMLInputElement> groupBox.children[1].children[1].children[0];
+    }
+
     const box = dce("div");
     box.className = "settings-row";
     box.innerHTML = `
@@ -298,11 +332,11 @@ async function settingAddTool(tool: iface.Tool) {
             <div class="settings-row-label">${tool.name.replace(/[^a-zA-Z0-9_-]/g, "_")}</div>
         </div>
         <label class="toggle">
-            <input type="checkbox" ${ui.settings.toolsEnabled.checked ? "checked " : ""}/>
+            <input type="checkbox" ${groupDefaultChk.checked ? "checked " : ""}/>
             <span class="toggle-slider"></span>
         </label>
     `;
-    ui.settings.toolsSeg.appendChild(box);
+    groupBox.appendChild(box);
 
     const el = <HTMLInputElement> box.children[1].children[0];
     await settingCheckbox(el, `tool-enabled-${tool.name}`);
@@ -314,11 +348,19 @@ async function settingAddTool(tool: iface.Tool) {
     events.events.addEventListener("tools-enabled-default", (_: Event) => {
         el.checked = ui.settings.toolsEnabled.checked;
         el.dispatchEvent(new Event("change"));
+
+        groupDefaultChk.checked = ui.settings.toolsEnabled.checked;
+        groupDefaultChk.dispatchEvent(new Event("change"));
+    });
+
+    groupDefaultChk.addEventListener("change", _ => {
+        el.checked = groupDefaultChk.checked;
+        el.dispatchEvent(new Event("change"));
     });
 }
 
 events.events.addEventListener("register-tool", (ev: any) => {
-    settingAddTool(ev.detail.tool);
+    settingAddTool(ev.detail.groupId, ev.detail.group, ev.detail.tool);
 });
 
 // Change all tools when the default is changed

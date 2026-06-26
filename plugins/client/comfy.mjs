@@ -136,9 +136,10 @@ async function toolImageEditMask(conv, argS) {
         return r;
     }
 }
+KAIL.registerToolGroup("comfy", "ComfyUI");
 // Set up our tools
 if (models["image-generation"] && models["image-generation"].length) {
-    KAIL.registerTool({
+    KAIL.registerTool("comfy", {
         name: "image_generation",
         enabled: true,
         function: toolImageGeneration,
@@ -180,7 +181,7 @@ if (models["image-generation"] && models["image-generation"].length) {
     });
 }
 if (models["image-edit"] && models["image-edit"].length) {
-    KAIL.registerTool({
+    KAIL.registerTool("comfy", {
         name: "image_edit",
         enabled: true,
         function: toolImageEdit,
@@ -218,7 +219,7 @@ if (models["image-edit"] && models["image-edit"].length) {
     });
 }
 if (models["image-edit-mask"] && models["image-edit-mask"].length) {
-    KAIL.registerTool({
+    KAIL.registerTool("comfy", {
         name: "image_edit_mask",
         enabled: true,
         function: toolImageEditMask,

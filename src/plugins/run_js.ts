@@ -191,7 +191,9 @@ async function jsTool(
 
 declare let KAIL: iface.KAIL;
 
-KAIL.registerTool({
+KAIL.registerToolGroup("run_js", "Run JavaScript");
+
+KAIL.registerTool("run_js", {
     name: "run_js",
     enabled: true,
     function: jsTool,

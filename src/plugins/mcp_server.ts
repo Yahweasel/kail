@@ -97,13 +97,14 @@ for (const name in config.mcpServers||{}) {
 async function mcpTool(req: http.IncomingMessage, res: http.ServerResponse) {
     if (req.url === "/") {
         // Just the list
-        const list: Record<string, typeof mcpServers["x"]["tools"][0]> =
+        const list: Record<string, Record<string, typeof mcpServers["x"]["tools"][0]>> =
             Object.create(null);
 
         for (const name1 in mcpServers) {
             const group = mcpServers[name1];
+            list[name1] = Object.create(null);
             for (const name2 in group.tools)
-                list[`${name1}/${name2}`] = group.tools[name2];
+                list[name1][`${name1}/${name2}`] = group.tools[name2];
         }
 
         res.writeHead(200, {"content-type": "application/json"});

@@ -144,10 +144,16 @@ export const settings = {
      * Settings close button.
      */
     close: gebi("settings-close-btn")!,
+
     /**
      * Tools settings section.
      */
     toolsSeg: gebi("cfg-tools")!,
+
+    /**
+     * Settings sections for each tool group.
+     */
+    toolGroupSegs: <Record<string, HTMLElement>> Object.create(null),
 
     /**
      * Model to use.

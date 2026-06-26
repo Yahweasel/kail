@@ -82,4 +82,5 @@ const render_svg_tool = {
         strict: true
     }
 };
-KAIL.registerTool(render_svg_tool);
+KAIL.registerToolGroup("render_svg", "Render SVG");
+KAIL.registerTool("render_svg", render_svg_tool);
