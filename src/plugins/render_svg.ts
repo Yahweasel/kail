@@ -14,7 +14,11 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+import * as fs from "./fs-helper";
+
 import type * as iface from "../client/iface";
+
+const fsBase = await fs.getFilesystemBase("images");
 
 /**
  * Tool function to render SVG to a raster image.
@@ -61,10 +65,10 @@ async function render_svg(
     const data = await dataP;
 
     // And make it into a message
-    return [<iface.MessageContentImage> {
+    return await fs.saveImage(fsBase, [<iface.MessageContentImage> {
         type: "image_url",
         image_url: {url: data}
-    }];
+    }]);
 }
 
 /**

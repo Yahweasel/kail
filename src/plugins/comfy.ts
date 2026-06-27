@@ -14,9 +14,14 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+import * as fs from "./fs-helper";
+
 import type * as iface from "../client/iface";
 
 declare let KAIL: iface.KAIL;
+
+// See if we can use the filesystem
+const fsBase = await fs.getFilesystemBase("images");
 
 // Get the list of models first
 const models: Record<string, string[]> = await (async () => {
@@ -65,6 +70,16 @@ function getImage(conv: iface.Conversation, imageIdx: number) {
 }
 
 /**
+ * Get an image URL from a file.
+ * @param file  Filename
+ * @returns Image URL, or empty string if not found
+ */
+async function getImageFS(file: string) {
+    return await fs.readFile(fsBase!, file) || "";
+}
+
+
+/**
  * Tool function for AI image generation.
  * @param _  Conversation (not used)
  * @param arg  JSON string with generation parameters
@@ -80,7 +95,7 @@ async function toolImageGeneration(
     });
     const r = await f.text();
     try {
-        return JSON.parse(r);
+        return await fs.saveImage(fsBase, JSON.parse(r));
     } catch (ex) {
         console.error(ex);
         return r;
@@ -98,7 +113,11 @@ async function toolImageEdit(
 ): Promise<string | iface.MessageContent[]> {
     // Get the image
     const arg = JSON.parse(argS);
-    const image = getImage(conv, arg.image);
+    let image: string;
+    if (typeof arg.image === "string" && fsBase)
+        image = await getImageFS(arg.image);
+    else
+        image = getImage(conv, arg.image);
 
     if (!image) {
         // Image not found!
@@ -114,7 +133,7 @@ async function toolImageEdit(
     });
     const r = await f.text();
     try {
-        return JSON.parse(r);
+        return await fs.saveImage(fsBase, JSON.parse(r));
     } catch (ex) {
         console.error(ex);
         return r;
@@ -132,7 +151,11 @@ async function toolImageEditMask(
 ): Promise<string | iface.MessageContent[]> {
     // Get the image
     const arg = JSON.parse(argS);
-    const image = getImage(conv, arg.image);
+    let image: string;
+    if (typeof arg.image === "string" && fsBase)
+        image = await getImageFS(arg.image);
+    else
+        image = getImage(conv, arg.image);
 
     if (!image) {
         return `ERROR: Image with index ${arg.image} not found`;
@@ -154,7 +177,7 @@ async function toolImageEditMask(
     });
     const r = await f.text();
     try {
-        return JSON.parse(r);
+        return await fs.saveImage(fsBase, JSON.parse(r));
     } catch (ex) {
         console.error(ex);
         return r;
@@ -228,8 +251,10 @@ if (models["image-edit"] && models["image-edit"].length) {
                             description: "Model to use. May be omitted to use the default model."
                         },
                         image: {
-                            type: "number",
-                            description: "Image to edit. This is an index to the image in the current conversation. That is, the first image posted by any party in this conversation has index 0, the second has index 1, etc. You can also use negative indices to index from the end, e.g., the most recent image is -1, second most recent is -2, etc. You should use negative indices whenever possible."
+                            type: fsBase ? "string" : "number",
+                            description: (fsBase
+                                ? "Filename of the image to edit."
+                                : "Image to edit. This is an index to the image in the current conversation. That is, the first image posted by any party in this conversation has index 0, the second has index 1, etc. You can also use negative indices to index from the end, e.g., the most recent image is -1, second most recent is -2, etc. You should use negative indices whenever possible.")
                         },
                         prompt: {
                             type: "string",
@@ -267,12 +292,18 @@ if (models["image-edit-mask"] && models["image-edit-mask"].length) {
                             description: "Model to use. May be omitted to use the default model."
                         },
                         image: {
-                            type: "number",
-                            description: "Image to edit. This is an index to the image in the current conversation. That is, the first image posted by any party in this conversation has index 0, the second has index 1, etc. You can also use negative indices to index from the end, e.g., the most recent image is -1, second most recent is -2, etc. You should use negative indices whenever possible."
+                            type: fsBase ? "string" : "number",
+                            description: (fsBase
+                                ? "Filename of the image to edit."
+                                : "Image to edit. This is an index to the image in the current conversation. That is, the first image posted by any party in this conversation has index 0, the second has index 1, etc. You can also use negative indices to index from the end, e.g., the most recent image is -1, second most recent is -2, etc. You should use negative indices whenever possible."
+                            )
                         },
                         mask: {
-                            type: "number",
-                            description: "Mask region(s) to edit. An index to the image, like the image property."
+                            type: fsBase ? "string" : "number",
+                            description: (fsBase
+                                ? "Mask region(s) to edit, given by a mask image file."
+                                : "Mask region(s) to edit. An index to the image, like the image property."
+                            )
                         },
                         prompt: {
                             type: "string",
