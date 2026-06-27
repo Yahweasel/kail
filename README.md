@@ -59,6 +59,11 @@ configuration for using [this DuckDuckGo MCP
 server](https://github.com/nickclyde/duckduckgo-mcp-server) is provided. For
 HTTP MCP clients, set `url` instead of `command`.
 
+If you load the standard filesystem server through MCP, the image plugins below
+will save their images to the filesystem, and load images from the filesystem.
+Most AI models handle that better than the stateless, conversation-based image
+loading that's used otherwise.
+
 ### Comfy
 
 The `comfy` plugin provides image generation and editing through
