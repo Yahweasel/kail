@@ -22,13 +22,13 @@ const fsBase = await fs.getFilesystemBase("images");
 
 /**
  * Tool function to render SVG to a raster image.
- * @param _  Conversation (not used)
+ * @param conv  Conversation
  * @param arg  JSON string with "svg" property containing SVG data
  * @returns Rendered image as message content, or error string
  */
 async function render_svg(
-    _: iface.Conversation, arg: string
-): Promise<string | iface.MessageContent[]> {
+    conv: iface.Conversation, arg: string
+): Promise<iface.ToolResponse> {
     const argObj = JSON.parse(arg);
 
     let blob = new Blob([
@@ -65,7 +65,7 @@ async function render_svg(
     const data = await dataP;
 
     // And make it into a message
-    return await fs.saveImage(fsBase, [<iface.MessageContentImage> {
+    return await fs.saveImage(conv, fsBase, [<iface.MessageContentImage> {
         type: "image_url",
         image_url: {url: data}
     }]);

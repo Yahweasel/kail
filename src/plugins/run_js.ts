@@ -71,51 +71,12 @@ const workerSrc = `
  * Send an image from the conversation to a worker.
  * @param w  Worker to send the image to
  * @param conv  Conversation to get the image from
- * @param image  Image name or index
+ * @param image  Image filename
  */
 async function sendImage(
-    w: Worker, conv: iface.Conversation, image: number | string
+    w: Worker, conv: iface.Conversation, image: string
 ) {
-    let imageStr: string | null = null;
-
-    if (typeof image === "string" && fsBase) {
-        imageStr = await fs.readFile(fsBase, image);
-
-    } else if (typeof image === "number" && image >= 0) {
-        let idx = image;
-        msgLoop1:
-        for (const msg of conv.messages) {
-            if (typeof msg.content === "string")
-                continue;
-            for (const c of msg.content) {
-                if (c.type !== "image_url")
-                    continue;
-                if (idx-- === 0) {
-                    imageStr = c.image_url.url;
-                    break msgLoop1;
-                }
-            }
-        }
-
-    } else if (typeof image === "number") {
-        let idx = image;
-        msgLoop2:
-        for (let mi = conv.messages.length - 1; mi >= 0; mi--) {
-            const msg = conv.messages[mi];
-            if (typeof msg.content === "string")
-                continue;
-            for (let ci = msg.content.length - 1; ci >= 0; ci--) {
-                const c = msg.content[ci];
-                if (c.type !== "image_url")
-                    continue;
-                if (++idx === 0) {
-                    imageStr = c.image_url.url;
-                    break msgLoop2;
-                }
-            }
-        }
-
-    }
+    const imageStr = await fs.readFile(conv, fsBase, image);
 
     // Now convert the image string into an ImageBitmap we can transfer
     let ib: ImageBitmap | null = null;
@@ -140,7 +101,7 @@ async function sendImage(
  */
 async function jsTool(
     conv: iface.Conversation, arg: string
-): Promise<string | iface.MessageContent[]> {
+): Promise<iface.ToolResponse> {
     const argObj = JSON.parse(arg);
 
     // Do the code on a worker
@@ -185,7 +146,7 @@ async function jsTool(
         const data = await dataP;
 
         // And make it into a message
-        return await fs.saveImage(fsBase, [<iface.MessageContentImage> {
+        return await fs.saveImage(conv, fsBase, [<iface.MessageContentImage> {
             type: "image_url",
             image_url: {url: data}
         }]);
@@ -232,10 +193,7 @@ Use this for both simple calculation and executing code. The sandbox the code is
 
 You have access to OffscreenCanvas. If you return an OffscreenCanvas, it will be converted to an image and returned. In this way, you can use this tool to draw.
 
-` + (fsBase
-    ? `You have access to image files with \`await image(name)\`, where \`name\` is the filename of an image file. \`await image(name)\` returns an ImageBitmap.`
-    : `You have access to previous images in the conversation with \`await image(idx)\`, where \`idx\` is the index of the previous image. Index 0 is the first image in the conversation, index 1 is the second, etc. You can also use negative indices to index from the end, e.g., the most recent image is -1, the second most recent is -2, etc. You should use negative indices whenever possible. \`await image(idx)\` returns an ImageBitmap.`
-),
+You have access to image files with \`await image(name)\`, where \`name\` is the filename of an image file. \`await image(name)\` returns an ImageBitmap.`,
             parameters: {
                 type: "object",
                 properties: {

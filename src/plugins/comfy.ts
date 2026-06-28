@@ -30,64 +30,25 @@ const models: Record<string, string[]> = await (async () => {
 })();
 
 /**
- * Get an image URL from the conversation by index.
- * @param conv  Conversation to search
- * @param imageIdx  Index of image (positive for forward, negative for backward)
- * @returns Image URL, or empty string if not found
- */
-function getImage(conv: iface.Conversation, imageIdx: number) {
-    if (imageIdx >= 0) {
-        for (const msg of conv.messages) {
-            if (typeof msg.content === "string")
-                continue;
-            for (const c of msg.content) {
-                if (c.type !== "image_url")
-                    continue;
-
-                if (imageIdx-- === 0)
-                    return c.image_url.url;
-            }
-        }
-
-    } else {
-        for (let mi = conv.messages.length - 1; mi >= 0; mi--) {
-            const msg = conv.messages[mi];
-            if (typeof msg.content === "string")
-                continue;
-            for (let ci = msg.content.length - 1; ci >= 0; ci--) {
-                const c = msg.content[ci];
-                if (c.type !== "image_url")
-                    continue;
-
-                if (++imageIdx === 0)
-                    return c.image_url.url;
-            }
-        }
-
-    }
-
-    return "";
-}
-
-/**
- * Get an image URL from a file.
+ * Get an image from a file.
+ * @param conv  Conversation
  * @param file  Filename
  * @returns Image URL, or empty string if not found
  */
-async function getImageFS(file: string) {
-    return await fs.readFile(fsBase!, file) || "";
+async function getImage(conv: iface.Conversation, file: string) {
+    return await fs.readFile(conv, fsBase, file) || "";
 }
 
 
 /**
  * Tool function for AI image generation.
- * @param _  Conversation (not used)
+ * @param conv  Conversation
  * @param arg  JSON string with generation parameters
  * @returns Generated image as message content, or error string
  */
 async function toolImageGeneration(
-    _: iface.Conversation, arg: string
-): Promise<string | iface.MessageContent[]> {
+    conv: iface.Conversation, arg: string
+): Promise<iface.ToolResponse> {
     const f = await fetch("/tools/comfy/image_generation", {
         method: "POST",
         headers: {"content-type": "application/json"},
@@ -95,7 +56,7 @@ async function toolImageGeneration(
     });
     const r = await f.text();
     try {
-        return await fs.saveImage(fsBase, JSON.parse(r));
+        return await fs.saveImage(conv, fsBase, JSON.parse(r));
     } catch (ex) {
         console.error(ex);
         return r;
@@ -110,18 +71,14 @@ async function toolImageGeneration(
  */
 async function toolImageEdit(
     conv: iface.Conversation, argS: string
-): Promise<string | iface.MessageContent[]> {
+): Promise<iface.ToolResponse> {
     // Get the image
     const arg = JSON.parse(argS);
-    let image: string;
-    if (typeof arg.image === "string" && fsBase)
-        image = await getImageFS(arg.image);
-    else
-        image = getImage(conv, arg.image);
+    const image: string = await getImage(conv, arg.image);
 
     if (!image) {
         // Image not found!
-        return `ERROR: Image with index ${arg.image} not found`;
+        return `ERROR: Image ${arg.image} not found`;
     }
 
     arg.image = image;
@@ -133,7 +90,7 @@ async function toolImageEdit(
     });
     const r = await f.text();
     try {
-        return await fs.saveImage(fsBase, JSON.parse(r));
+        return await fs.saveImage(conv, fsBase, JSON.parse(r));
     } catch (ex) {
         console.error(ex);
         return r;
@@ -148,23 +105,17 @@ async function toolImageEdit(
  */
 async function toolImageEditMask(
     conv: iface.Conversation, argS: string
-): Promise<string | iface.MessageContent[]> {
+): Promise<iface.ToolResponse> {
     // Get the image
     const arg = JSON.parse(argS);
-    let image: string;
-    if (typeof arg.image === "string" && fsBase)
-        image = await getImageFS(arg.image);
-    else
-        image = getImage(conv, arg.image);
-
+    const image = await getImage(conv, arg.image);
     if (!image) {
-        return `ERROR: Image with index ${arg.image} not found`;
+        return `ERROR: Image ${arg.image} not found`;
     }
 
-    const mask = getImage(conv, arg.mask);
-
+    const mask = await getImage(conv, arg.mask);
     if (!mask) {
-        return `ERROR: Mask image with index ${arg.image} not found`;
+        return `ERROR: Mask image ${arg.mask} not found`;
     }
 
     arg.image = image;
@@ -177,7 +128,7 @@ async function toolImageEditMask(
     });
     const r = await f.text();
     try {
-        return await fs.saveImage(fsBase, JSON.parse(r));
+        return await fs.saveImage(conv, fsBase, JSON.parse(r));
     } catch (ex) {
         console.error(ex);
         return r;
@@ -251,10 +202,8 @@ if (models["image-edit"] && models["image-edit"].length) {
                             description: "Model to use. May be omitted to use the default model."
                         },
                         image: {
-                            type: fsBase ? "string" : "number",
-                            description: (fsBase
-                                ? "Filename of the image to edit."
-                                : "Image to edit. This is an index to the image in the current conversation. That is, the first image posted by any party in this conversation has index 0, the second has index 1, etc. You can also use negative indices to index from the end, e.g., the most recent image is -1, second most recent is -2, etc. You should use negative indices whenever possible.")
+                            type: "string",
+                            description: "Filename of the image to edit."
                         },
                         prompt: {
                             type: "string",
@@ -282,7 +231,7 @@ if (models["image-edit-mask"] && models["image-edit-mask"].length) {
             type: "function",
             function: {
                 name: "image_edit_mask",
-                description: "Use AI to edit an image in a specified region or regions. Use a mask to specify the region. White pixels will be modified; black pixels will be left unmodified. Grey pixels will be modified partially.",
+                description: "Use AI to edit an image in a specified region or regions. Use a mask to specify the region. White pixels will be modified; black pixels will be left unmodified. Grey pixels will be modified partially. You can use `run_js`'s canvas functionality to create a mask.",
                 parameters: {
                     type: "object",
                     properties: {
@@ -292,18 +241,12 @@ if (models["image-edit-mask"] && models["image-edit-mask"].length) {
                             description: "Model to use. May be omitted to use the default model."
                         },
                         image: {
-                            type: fsBase ? "string" : "number",
-                            description: (fsBase
-                                ? "Filename of the image to edit."
-                                : "Image to edit. This is an index to the image in the current conversation. That is, the first image posted by any party in this conversation has index 0, the second has index 1, etc. You can also use negative indices to index from the end, e.g., the most recent image is -1, second most recent is -2, etc. You should use negative indices whenever possible."
-                            )
+                            type: "string",
+                            description:"Filename of the image to edit."
                         },
                         mask: {
-                            type: fsBase ? "string" : "number",
-                            description: (fsBase
-                                ? "Mask region(s) to edit, given by a mask image file."
-                                : "Mask region(s) to edit. An index to the image, like the image property."
-                            )
+                            type: "string",
+                            description: "Mask region(s) to edit, given by a mask image file."
                         },
                         prompt: {
                             type: "string",
