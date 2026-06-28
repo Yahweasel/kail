@@ -61,8 +61,7 @@ HTTP MCP clients, set `url` instead of `command`.
 
 If you load the standard filesystem server through MCP, the image plugins below
 will save their images to the filesystem, and load images from the filesystem.
-Most AI models handle that better than the stateless, conversation-based image
-loading that's used otherwise.
+This can allow you to share images between conversations.
 
 ### Comfy
 
