@@ -259,6 +259,8 @@ async function saveImage(conv, base, msg) {
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+if (typeof Worker === "undefined" || typeof OffscreenCanvas === "undefined")
+    throw Error("The run_js tool requires the web client.");
 const fsBase = await getFilesystemBase("images");
 // Source for the worker to run any JS code
 const workerSrc = `

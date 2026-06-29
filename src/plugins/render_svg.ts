@@ -18,6 +18,9 @@ import * as fs from "./fs-helper";
 
 import type * as iface from "../client/iface";
 
+if (typeof Image === "undefined")
+    throw Error("The render_svg tool requires the web client.");
+
 const fsBase = await fs.getFilesystemBase("images");
 
 /**

@@ -234,6 +234,8 @@ async function saveImage(conv, base, msg) {
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+if (typeof Image === "undefined")
+    throw Error("The render_svg tool requires the web client.");
 const fsBase = await getFilesystemBase("images");
 /**
  * Tool function to render SVG to a raster image.

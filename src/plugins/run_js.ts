@@ -18,6 +18,9 @@ import * as fs from "./fs-helper";
 
 import type * as iface from "../client/iface";
 
+if (typeof Worker === "undefined" || typeof OffscreenCanvas === "undefined")
+    throw Error("The run_js tool requires the web client.");
+
 const fsBase = await fs.getFilesystemBase("images");
 
 // Source for the worker to run any JS code
