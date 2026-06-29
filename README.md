@@ -30,6 +30,10 @@ server is stateless.
 The interface is similar to most other AI chat systems, just with some extra
 options exposed.
 
+If you get a workflow working well on KAIL and want to automate it, there is
+also a non-interactive CLI client, `kail-cli.mjs`. run
+`node kail-cli.mjs --help` for more information.
+
 
 ## Building
 
