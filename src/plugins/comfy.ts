@@ -25,7 +25,7 @@ const fsBase = await fs.getFilesystemBase("images");
 
 // Get the list of models first
 const models: Record<string, string[]> = await (async () => {
-    const f = await fetch("/tools/comfy/models");
+    const f = await fetch(`${KAIL.host}/tools/comfy/models`);
     return await f.json();
 })();
 
@@ -49,7 +49,7 @@ async function getImage(conv: iface.Conversation, file: string) {
 async function toolImageGeneration(
     conv: iface.Conversation, arg: string
 ): Promise<iface.ToolResponse> {
-    const f = await fetch("/tools/comfy/image_generation", {
+    const f = await fetch(`${KAIL.host}/tools/comfy/image_generation`, {
         method: "POST",
         headers: {"content-type": "application/json"},
         body: arg
@@ -83,7 +83,7 @@ async function toolImageEdit(
 
     arg.image = image;
 
-    const f = await fetch("/tools/comfy/image_edit", {
+    const f = await fetch(`${KAIL.host}/tools/comfy/image_edit`, {
         method: "POST",
         headers: {"content-type": "application/json"},
         body: JSON.stringify(arg)
@@ -121,7 +121,7 @@ async function toolImageEditMask(
     arg.image = image;
     arg.mask = mask;
 
-    const f = await fetch("/tools/comfy/image_edit_mask", {
+    const f = await fetch(`${KAIL.host}/tools/comfy/image_edit_mask`, {
         method: "POST",
         headers: {"content-type": "application/json"},
         body: JSON.stringify(arg)

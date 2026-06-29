@@ -14,15 +14,17 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-import * as iface from "../client/iface";
+import type * as iface from "../client/iface";
 
 import type * as mcp from "@modelcontextprotocol/sdk/client/index.js";
+
+declare let KAIL: iface.KAIL;
 
 // Get the list of MCP endpoints from the server
 const list: Record<string, Record<string,
     Awaited<ReturnType<typeof mcp.Client.prototype.listTools>>["tools"][0]
 >> = await (async () => {
-    const f = await fetch("/tools/mcp");
+    const f = await fetch(`${KAIL.host}/tools/mcp`);
     return await f.json();
 })();
 
@@ -33,7 +35,7 @@ const list: Record<string, Record<string,
  * @returns Tool result from MCP server
  */
 async function mcpTool(url: string, arg: string) {
-    const f = await fetch(`/tools/mcp/${url}`, {
+    const f = await fetch(`${KAIL.host}/tools/mcp/${url}`, {
         method: "POST",
         headers: {"content-type": "application/json"},
         body: arg
@@ -42,7 +44,6 @@ async function mcpTool(url: string, arg: string) {
 }
 
 // Register each tool
-declare let KAIL: iface.KAIL;
 for (const groupName in list) {
     const groupList = list[groupName];
     const groupId = `mcp_${groupName}`;

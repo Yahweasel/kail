@@ -49,6 +49,13 @@ export default [{
     },
     plugins
 }, {
+    input: "src/cli/cli.ts",
+    output: {
+        file: "kail-cli.mjs",
+        format: "es"
+    },
+    plugins
+}, {
     input: "src/server/server.ts",
     external: ["serve-static", "finalhandler"],
     output: {
@@ -75,4 +82,6 @@ export default [{
     plugin("mcp"),
     plugin("render_svg"),
     plugin("run_js"),
+
+    plugin("oil_canvas"),
 ];

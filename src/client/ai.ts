@@ -16,273 +16,17 @@
 
 import * as chats from "./chats";
 import { dce } from "./dom";
-import * as events from "./events";
 import * as iface from "./iface";
+import * as proc from "./proc";
+import "./public";
 import * as ui from "./ui";
 
 import * as smd from "streaming-markdown";
 
-/**
- * Tool groups, to be filled in by other sources.
- */
-export const toolGroups: Record<string, iface.ToolGroup> = Object.create(null);
-
-/**
- * Tools, to be filled in by other sources.
- */
-export const tools: Record<string, iface.Tool> = Object.create(null);
-
-/**
- * Function to register a tool group.
- * @param id  Internal ID for the group
- * @param name  Public name for the group
- */
-export function registerToolGroup(id: string, name: string) {
-    if (toolGroups[id])
-        return;
-    toolGroups[id] = {name, tools: Object.create(null)};
-}
-
-
-/**
- * Function to register a tool (add it to the tools list).
- * @param group  The group to register the tool in
- * @param tool  Tool to register
- */
-export function registerTool(group: string, tool: iface.Tool) {
-    registerToolGroup(group, group);
-    toolGroups[group].tools[tool.name] = tool;
-
-    // Try variations of the name for the registered tool
-    let tryName = tool.name;
-    if (tools[tryName])
-        tryName = `${group}_${tool.name}`;
-    let idx = 2;
-    while (tools[tryName])
-        tryName = `${group}_${tool.name}_${idx++}`;
-
-    // And register it with the chosen name
-    tools[tryName] = tool;
-    tool.name = tryName;
-    tool.schema.function.name = tryName;
-
-    events.dispatch("register-tool", {
-        groupId: group, group: toolGroups[group], tool
-    });
-}
-
-/**
- * Create a simple tool function for a tool handled by the server.
- * @param name  Tool name
- */
-export function simpleRemoteTool(name: string): iface.ToolFunction {
-    return async (conv: iface.Conversation, arg: string) => {
-        try {
-            const f = await fetch(`/tools/${name}`, {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json"
-                },
-                body: JSON.stringify({conv, arg})
-            });
-            return await f.json();
-        } catch (ex) {
-            return `ERROR: ${ex}`;
-        }
-    };
-}
-
-(<any> globalThis).KAIL = (<any> globalThis).KAIL || {};
 declare let KAIL: iface.KAIL;
-KAIL.toolGroups = toolGroups;
-KAIL.tools = tools;
-KAIL.registerToolGroup = registerToolGroup;
-KAIL.registerTool = registerTool;
-(<any> KAIL).simpleRemoteTool = simpleRemoteTool;
 
-
-// Cache of images converted to lossy formats
-const lossyImageCache: WeakMap<
-    iface.MessageContentImage, iface.MessageContentImage
-> = new WeakMap();
-
-/**
- * Convert an image to a lossy format (JPEG/WebP) for compatibility with
- * models that have data size limits.
- * @param image  Image to convert
- * @returns The image, possibly in a lossy format
- */
-async function lossyImage(
-    image: iface.MessageContentImage
-): Promise<iface.MessageContentImage> {
-    if (lossyImageCache.has(image))
-        return lossyImageCache.get(image)!;
-
-    // 1. Convert it to an Image
-    const img = new Image();
-    img.src = image.image_url.url;
-    {
-        const ok = await new Promise<boolean>(res => {
-            img.onload = () => res(true);
-            img.onerror = () => res(false);
-        });
-        if (!ok) {
-            lossyImageCache.set(image, image);
-            return image;
-        }
-    }
-
-    // 2. Draw it on a canvas
-    const canvas = new OffscreenCanvas(img.width, img.height);
-    const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(img, 0, 0);
-
-    // 3. Try formats
-    let ret: string | null = null;
-    async function tryFormat(mime: string, quality: number) {
-        const blob = await canvas.convertToBlob({
-            type: mime,
-            quality
-        });
-        if (!blob.type.startsWith(mime))
-            return false;
-
-        const rdr = new FileReader();
-        const rdrP = new Promise<boolean>(res => {
-            rdr.onload = () => {
-                ret = <string> rdr.result;
-                res(true);
-            };
-            rdr.onerror = () => res(false);
-        });
-        rdr.readAsDataURL(blob);
-        return await rdrP;
-    }
-    //(await tryFormat("image/webp", 0.8)) ||
-        (await tryFormat("image/jpeg", 0.9));
-
-    if (ret) {
-        const lossy: iface.MessageContentImage = {
-            type: "image_url",
-            image_url: {url: ret}
-        };
-        lossyImageCache.set(image, lossy);
-        return lossy;
-
-    } else {
-        lossyImageCache.set(image, image);
-        return image;
-
-    }
-}
-
-/**
- * Convert all images in a conversation to lossy formats for compatibility.
- * @param conv  Conversation to convert
- * @returns Copy of conversation with lossy images
- */
-async function lossyConversation(conv: iface.Message[]): Promise<iface.Message[]> {
-    const ret: iface.Message[] = [];
-
-    for (const c of conv) {
-        if (
-            typeof c.content === "string" ||
-            c.content.findIndex(x => x.type === "image_url") < 0
-        ) {
-            ret.push(c);
-            continue;
-        }
-
-        const cc: iface.Message = <any> {};
-        Object.assign(cc, c);
-        cc.content = [];
-
-        for (const part of c.content) {
-            if (part.type !== "image_url") {
-                cc.content.push(part);
-                continue;
-            }
-            cc.content.push(await lossyImage(part));
-        }
-
-        ret.push(cc);
-    }
-
-    return ret;
-}
-
-/**
- * Fix up data in messages for compatibility. Removes hidden messages and
- * metadata, and removes data: URI headers from audio and video data for
- * llama.cpp compatibility.
- * @param conv  Conversation to fix up
- * @returns Copy of conversation with fixed up data URLs
- */
-async function dataFixup(conv: iface.Message[]): Promise<iface.Message[]> {
-    const ret: iface.Message[] = [];
-
-    let skipCount = 0;
-    function skipMsg() {
-        if (skipCount <= 0)
-            return;
-        ret.push({
-            role: "user",
-            content: `SYSTEM MESSAGE: ${skipCount} messages have been elided for context room.`
-        });
-        skipCount = 0;
-    }
-
-    for (const c of conv) {
-        if (c.kail_hidden) {
-            skipCount++;
-            continue;
-        }
-        skipMsg();
-
-        if (typeof c.content === "string") {
-            ret.push(c);
-            continue;
-        }
-
-        const cc: iface.Message = <any> {};
-        Object.assign(cc, c);
-        cc.content = [];
-
-        for (const part of c.content) {
-            const pp = <any> {};
-            Object.assign(pp, part);
-            delete pp._meta;
-            cc.content.push(pp);
-
-            if (
-                part.type === "input_audio" ||
-                part.type === "input_video"
-            ) {
-                let url: string;
-                if (part.type === "input_audio")
-                    url = part.input_audio.url;
-                else
-                    url = part.input_video.url;
-                const data = {
-                    data: url.slice(url.indexOf(",") + 1)
-                };
-
-                if (part.type === "input_audio")
-                    pp.input_audio = data;
-                else
-                    pp.input_video = data;
-            }
-
-        }
-
-        ret.push(cc);
-    }
-
-    skipMsg();
-
-    return ret;
-}
-
+// This is the web client, so the host is local
+KAIL.host = "";
 
 
 /**
@@ -297,6 +41,8 @@ export async function complete(conv: iface.Conversation) {
             break;
 
         const lastMessage = conv.messages[conv.messages.length-1];
+        if (!lastMessage)
+            break;
 
         if (
             lastMessage.role === "user" ||
@@ -312,7 +58,7 @@ export async function complete(conv: iface.Conversation) {
         ) {
             // Assistant message, but with function calls
             for (const tc of lastMessage.tool_calls) {
-                const tool = tools[tc.function.name];
+                const tool = KAIL.tools[tc.function.name];
 
                 const msg: iface.Message = {
                     role: "tool",
@@ -482,22 +228,22 @@ async function completeAssistant(conv: iface.Conversation) {
 
 
     try {
-        const inputMessages = await dataFixup(conv.messages);
+        const inputMessages = await proc.dataFixup(conv.messages);
 
         // Set up our query with the settings
         const req: any = {
-            model: ui.settings.model.value,
+            model: KAIL.model,
             stream: true,
             messages: inputMessages,
-            tools: Object.values(tools).filter(x => x.enabled).map(x => x.schema)
+            tools: Object.values(KAIL.tools).filter(x => x.enabled).map(x => x.schema)
         };
 
         // Force naming
         if (
             !conv.name &&
             ui.settings.forceName.checked &&
-            tools["set_chat_name"] &&
-            tools["set_chat_name"].enabled
+            KAIL.tools["set_chat_name"] &&
+            KAIL.tools["set_chat_name"].enabled
         ) {
             // Force the AI to set a chat title first
             req.tool_choice = "required";
@@ -538,13 +284,13 @@ async function completeAssistant(conv: iface.Conversation) {
             },
             body: JSON.stringify(req)
         };
-        let f = await fetch("/v1/chat/completions", reqInit);
+        let f = await fetch(`${KAIL.host}/v1/chat/completions`, reqInit);
 
         if (f.status === 413 /* content too large */) {
             // Try lossy
-            req.messages = await lossyConversation(inputMessages);
+            req.messages = await proc.lossyConversation(inputMessages);
             reqInit.body = JSON.stringify(req);
-            f = await fetch("/v1/chat/completions", reqInit);
+            f = await fetch(`${KAIL.host}/v1/chat/completions`, reqInit);
         }
 
         if (f.status < 200 || f.status >= 300) {

@@ -15,7 +15,7 @@
  */
 // Get the list of MCP endpoints from the server
 const list = await (async () => {
-    const f = await fetch("/tools/mcp");
+    const f = await fetch(`${KAIL.host}/tools/mcp`);
     return await f.json();
 })();
 /**
@@ -25,13 +25,14 @@ const list = await (async () => {
  * @returns Tool result from MCP server
  */
 async function mcpTool(url, arg) {
-    const f = await fetch(`/tools/mcp/${url}`, {
+    const f = await fetch(`${KAIL.host}/tools/mcp/${url}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: arg
     });
     return await f.json();
 }
+// Register each tool
 for (const groupName in list) {
     const groupList = list[groupName];
     const groupId = `mcp_${groupName}`;

@@ -17,7 +17,10 @@
 import { dce } from "./dom";
 import * as events from "./events";
 import * as iface from "./iface";
+import "./public";
 import * as ui from "./ui";
+
+declare let KAIL: iface.KAIL;
 
 declare let localforage: any;
 
@@ -273,8 +276,8 @@ async function settingCheckbox(el: HTMLInputElement, save: string) {
 
 // Model saving
 async function onModelChange() {
+    KAIL.model = ui.settings.model.value;
     ui.modelBadge.innerText = ui.settings.model.value;
-    await lf.setItem("settings-model", ui.settings.model.value);
 };
 
 await settingValue(ui.settings.model, "model");

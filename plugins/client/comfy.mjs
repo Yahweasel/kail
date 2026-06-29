@@ -263,7 +263,7 @@ async function saveImage(conv, base, msg) {
 const fsBase = await getFilesystemBase("images");
 // Get the list of models first
 const models = await (async () => {
-    const f = await fetch("/tools/comfy/models");
+    const f = await fetch(`${KAIL.host}/tools/comfy/models`);
     return await f.json();
 })();
 /**
@@ -282,7 +282,7 @@ async function getImage(conv, file) {
  * @returns Generated image as message content, or error string
  */
 async function toolImageGeneration(conv, arg) {
-    const f = await fetch("/tools/comfy/image_generation", {
+    const f = await fetch(`${KAIL.host}/tools/comfy/image_generation`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: arg
@@ -311,7 +311,7 @@ async function toolImageEdit(conv, argS) {
         return `ERROR: Image ${arg.image} not found`;
     }
     arg.image = image;
-    const f = await fetch("/tools/comfy/image_edit", {
+    const f = await fetch(`${KAIL.host}/tools/comfy/image_edit`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(arg)
@@ -344,7 +344,7 @@ async function toolImageEditMask(conv, argS) {
     }
     arg.image = image;
     arg.mask = mask;
-    const f = await fetch("/tools/comfy/image_edit_mask", {
+    const f = await fetch(`${KAIL.host}/tools/comfy/image_edit_mask`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(arg)

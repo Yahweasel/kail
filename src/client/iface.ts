@@ -163,8 +163,34 @@ export interface ToolGroup {
  * The public interface for plugins, under the global name `KAIL`.
  */
 export interface KAIL {
+    /**
+     * Hostname to use with `fetch` to connect to the server (and AI). Empty
+     * string if `fetch("/...")` works.
+     */
+    host: string;
+
+    /**
+     * AI model to use.
+     */
+    model: string;
+
+    /**
+     * Registered tool groups.
+     */
     toolGroups: Record<string, ToolGroup>;
+
+    /**
+     * Registered tools.
+     */
     tools: Record<string, Tool>;
+
+    /**
+     * Register a tool group. Nothing more than a name for now.
+     */
     registerToolGroup: (id: string, name: string) => unknown;
+
+    /**
+     * Register a tool.
+     */
     registerTool: (group: string, tool: Tool) => unknown;
 };

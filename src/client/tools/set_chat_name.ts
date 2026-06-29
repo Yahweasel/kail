@@ -17,6 +17,10 @@
 import * as ai from "../ai";
 import * as events from "../events";
 import * as iface from "../iface";
+import "../public";
+
+declare let KAIL: iface.KAIL;
+
 
 /**
  * Tool function to set the name of the current conversation.
@@ -31,9 +35,9 @@ async function set_chat_name(chat: iface.Conversation, args: string) {
     return "";
 }
 
-ai.registerToolGroup("kail", "KAIL");
+KAIL.registerToolGroup("kail", "KAIL");
 
-ai.registerTool("kail", {
+KAIL.registerTool("kail", {
     name: "set_chat_name",
     enabled: true,
     function: set_chat_name,

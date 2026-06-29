@@ -1,5 +1,6 @@
 ROLLUP=\
 	server.mjs \
+	kail-cli.mjs \
 	static/kail.mjs \
 	plugins/client/comfy.mjs \
 	plugins/server/comfy.mjs \
