@@ -22,9 +22,15 @@ const plugins = [nodeResolve(), typescript()];
 function plugin(name) {
     return {
         input: `src/plugins/${name}.ts`,
+        external: ["../lib/fs-helper"],
         output: {
             file: `plugins/client/${name}.mjs`,
-            format: "es"
+            format: "es",
+            paths: id => {
+                if (id.endsWith("lib/fs-helper"))
+                    return "../lib/fs-helper.mjs";
+                return null;
+            }
         },
         plugins
     };
@@ -60,6 +66,13 @@ export default [{
     external: ["serve-static", "finalhandler"],
     output: {
         file: "server.mjs",
+        format: "es"
+    },
+    plugins
+}, {
+    input: "src/lib/fs-helper.ts",
+    output: {
+        file: "plugins/lib/fs-helper.mjs",
         format: "es"
     },
     plugins

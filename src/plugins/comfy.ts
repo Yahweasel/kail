@@ -14,7 +14,7 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-import * as fs from "./fs-helper";
+import * as fs from "../lib/fs-helper";
 
 import type * as iface from "../client/iface";
 

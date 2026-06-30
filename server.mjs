@@ -127,6 +127,7 @@ const DEFAULT_PORT = 8189;
 const PORT = config.port || DEFAULT_PORT;
 const CACHE_PATH = "/cache/";
 const PLUGINS_PATH = "/plugins";
+const PLUGIN_LIBS_PATH = "/lib";
 const PROXY_PATH = "/v1/";
 const TOOLS_PATH = "/tools/";
 /**
@@ -190,6 +191,7 @@ const completionProxy = toolFunctionProxy(config.openai.host);
 // Set up the web server
 const serve = serveStatic(`${process.cwd()}/static`);
 const pluginsServe = serveStatic(`${process.cwd()}/plugins/client`);
+const pluginLibsServe = serveStatic(`${process.cwd()}/plugins/lib`);
 const server = http.createServer();
 server.on("request", async (req, res) => {
     const url = req.url;
@@ -199,7 +201,11 @@ server.on("request", async (req, res) => {
     else if (url.startsWith(`${PLUGINS_PATH}/`)) {
         // Send a client plugin back
         req.url = url.slice(PLUGINS_PATH.length);
-        pluginsServe(req, res, finalhandler(res, req));
+        pluginsServe(req, res, finalhandler(req, res));
+    }
+    else if (url.startsWith(`${PLUGIN_LIBS_PATH}/`)) {
+        req.url = url.slice(PLUGIN_LIBS_PATH.length);
+        pluginLibsServe(req, res, finalhandler(req, res));
     }
     else if (url === PLUGINS_PATH) {
         // Get the list of plugins
