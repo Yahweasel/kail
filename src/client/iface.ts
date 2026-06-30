@@ -193,4 +193,9 @@ export interface KAIL {
      * Register a tool.
      */
     registerTool: (group: string, tool: Tool) => unknown;
+
+    /**
+     * The client-side configuration, if in CLI.
+     */
+    cliConfig?: any;
 };
