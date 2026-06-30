@@ -2083,9 +2083,13 @@ function mkMsgBox(conv, msg, opts = {}) {
                     const video = dce("video");
                     video.className = "msg-image";
                     video.controls = true;
-                    loadSteps.push(new Promise(res => {
-                        video.onload = video.onerror = res;
-                    }));
+                    loadSteps.push(Promise.race([
+                        new Promise(res => {
+                            video.onload = video.onerror = video.onloadedmetadata =
+                                video.onloadeddata = res;
+                        }),
+                        new Promise(res => setTimeout(res, 500))
+                    ]));
                     video.src = part.input_video.url;
                     body.appendChild(video);
                     break;
