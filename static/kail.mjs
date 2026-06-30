@@ -2072,6 +2072,7 @@ function mkMsgBox(conv, msg, opts = {}) {
             case "input_audio":
                 {
                     const audio = dce("audio");
+                    audio.className = "msg-image";
                     audio.controls = true;
                     audio.src = part.input_audio.url;
                     body.appendChild(audio);
@@ -2080,6 +2081,7 @@ function mkMsgBox(conv, msg, opts = {}) {
             case "input_video":
                 {
                     const video = dce("video");
+                    video.className = "msg-image";
                     video.controls = true;
                     loadSteps.push(new Promise(res => {
                         video.onload = video.onerror = res;

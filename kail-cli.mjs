@@ -403,6 +403,7 @@ argument.
 `);
     process.exit(1);
 }
+KAIL.cliConfig = config;
 KAIL.host = config.host || "http://localhost:8189";
 KAIL.model = config.model;
 // Load tools
