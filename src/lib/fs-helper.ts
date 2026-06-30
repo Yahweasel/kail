@@ -93,7 +93,7 @@ export let filesystemBase: string | null = null;
 // See if the filesystem is supported
 {
     try {
-        const mcp = "./mcp.mjs";
+        const mcp = "../client/mcp.mjs";
         // @ts-ignore
         await import(mcp);
         if (
