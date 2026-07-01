@@ -4,6 +4,7 @@ ROLLUP=\
 	static/kail.mjs \
 	plugins/client/comfy.mjs \
 	plugins/server/comfy.mjs \
+	plugins/lib/fs-helper.mjs \
 	plugins/server/mcp.mjs \
 	plugins/client/mcp.mjs \
 	plugins/client/render_svg.mjs \
