@@ -66,6 +66,9 @@ export async function complete(conv: iface.Conversation) {
                     content: ""
                 };
 
+                if (lastMessage.kail_hidden)
+                    msg.kail_hidden = true;
+
                 // Make the message box early so that it doesn't seem stuck
                 let loadingBox: ReturnType<typeof ui.mkMsgBox> | null = null;
                 if (ui.currentConversation === conv) {
@@ -257,9 +260,11 @@ async function completeAssistant(conv: iface.Conversation) {
                 req.thinking_budget_tokens =
                     req.reasoning_budget_tokens =
                     0;
+                req.max_completion_tokens = 1024;
                 req.chat_template_kwargs = {
                     enable_thinking: false
                 };
+                msg.kail_hidden = true;
             }
         }
 
