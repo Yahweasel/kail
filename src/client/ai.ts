@@ -167,6 +167,7 @@ async function completeAssistant(conv: iface.Conversation) {
     let smdRender: smd.Default_Renderer | null = null;
     let smdParser: smd.Parser | null = null;
     let currentFunctionIdx = -1;
+    let forcingName = false;
 
     function customCursor(f: any) {
         return function(data: any) {
@@ -265,6 +266,7 @@ async function completeAssistant(conv: iface.Conversation) {
                     enable_thinking: false
                 };
                 msg.kail_hidden = true;
+                forcingName = true;
             }
         }
 
@@ -443,6 +445,15 @@ async function completeAssistant(conv: iface.Conversation) {
     if (conv.inProgress) {
         const msg = conv.inProgress;
         delete conv.inProgress;
+
+        if (forcingName && msg.role === "system") {
+            /* We were forcing a name and it crashed. Probably the model cannot
+             * be forced to call a tool. Use a default name and move on. */
+            conv.name = conv.name || "Untitled chat";
+            msg.role = "tool"; // So that it will still complete
+            msg.kail_hidden = true;
+        }
+
         await chats.convPush(conv, msg);
 
         if (box)
