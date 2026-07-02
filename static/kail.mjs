@@ -2761,6 +2761,8 @@ async function complete(conv) {
                     tool_call_id: tc.id,
                     content: ""
                 };
+                if (lastMessage.kail_hidden)
+                    msg.kail_hidden = true;
                 // Make the message box early so that it doesn't seem stuck
                 let loadingBox = null;
                 if (currentConversation === conv) {
@@ -2853,6 +2855,7 @@ async function completeAssistant(conv) {
     let smdRender = null;
     let smdParser = null;
     let currentFunctionIdx = -1;
+    let forcingName = false;
     function customCursor(f) {
         return function (data) {
             try {
@@ -2932,9 +2935,12 @@ async function completeAssistant(conv) {
                 req.thinking_budget_tokens =
                     req.reasoning_budget_tokens =
                         0;
+                req.max_completion_tokens = 1024;
                 req.chat_template_kwargs = {
                     enable_thinking: false
                 };
+                msg.kail_hidden = true;
+                forcingName = true;
             }
         }
         // Other request parameters
@@ -2992,6 +2998,8 @@ async function completeAssistant(conv) {
                     if (parts[1][0] === "[")
                         continue;
                     const res = JSON.parse(parts[1]);
+                    if (!res.choices || !res.choices[0])
+                        throw Error(`Invalid data from completion server: ${parts[1]}`);
                     const delta = res.choices[0].delta;
                     // To handle scrolling non-aggressively
                     const scrolledToBottom = messages.scrollHeight -
@@ -3100,6 +3108,13 @@ async function completeAssistant(conv) {
     if (conv.inProgress) {
         const msg = conv.inProgress;
         delete conv.inProgress;
+        if (forcingName && msg.role === "system") {
+            /* We were forcing a name and it crashed. Probably the model cannot
+             * be forced to call a tool. Use a default name and move on. */
+            conv.name = conv.name || "Untitled chat";
+            msg.role = "tool"; // So that it will still complete
+            msg.kail_hidden = true;
+        }
         await convPush(conv, msg);
         if (box)
             box.box.remove();

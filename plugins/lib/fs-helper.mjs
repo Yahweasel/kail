@@ -77,7 +77,9 @@ let filesystemBase = null;
 // See if the filesystem is supported
 {
     try {
-        const mcp = "../client/mcp.mjs";
+        const mcp = (typeof process === "undefined")
+            ? "../plugins/mcp.mjs"
+            : "../client/mcp.mjs";
         // @ts-ignore
         await import(mcp);
         if (KAIL.tools.read_file &&
