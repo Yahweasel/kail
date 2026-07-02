@@ -179,22 +179,22 @@ KAIL.registerTool("run_js", {
             description:
 `Run JavaScript code. The JavaScript code you provide will be run as the body of an async function, and whatever that function returns will be returned to you. You *must* return at the end of your code; you will not receive the value of the last statement, only whatever is returned.
 
-Examples:
+YOU MUST ACTUALLY RETURN, USING A RETURN STATEMENT, TO GET A VALUE:
 \`\`\`javascript
-// WRONG: Returns undefined
 let x = 21;
+// WRONG: Returns undefined
 x * 2;
 \`\`\`
 
 \`\`\`javascript
-// CORRECT: Returns 42
 let x = 21;
+// CORRECT: Returns 42
 return x * 2;
 \`\`\`
 
 Use this for both simple calculation and executing code. The sandbox the code is run in has no access to the DOM or any other modules.
 
-You have access to OffscreenCanvas. If you return an OffscreenCanvas, it will be converted to an image and returned. In this way, you can use this tool to draw.
+You have access to OffscreenCanvas. If you return an OffscreenCanvas, it will be converted to an image and returned. Again, you must actually *return* it using a return statement. In this way, you can use this tool to draw.
 
 You have access to image files with \`await image(name)\`, where \`name\` is the filename of an image file. \`await image(name)\` returns an ImageBitmap.`,
             parameters: {
