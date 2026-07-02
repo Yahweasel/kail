@@ -326,6 +326,8 @@ async function completeAssistant(conv: iface.Conversation) {
                 }
                 if (parts[1][0] === "[") continue;
                 const res = JSON.parse(parts[1]);
+                if (!res.choices || !res.choices[0])
+                    throw Error(`Invalid data from completion server: ${parts[1]}`);
                 const delta = res.choices[0].delta;
 
                 // To handle scrolling non-aggressively
