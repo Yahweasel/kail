@@ -448,12 +448,15 @@ async function completeAssistant(conv: iface.Conversation) {
         const msg = conv.inProgress;
         delete conv.inProgress;
 
-        if (forcingName && msg.role === "system") {
-            /* We were forcing a name and it crashed. Probably the model cannot
-             * be forced to call a tool. Use a default name and move on. */
-            conv.name = conv.name || "Untitled chat";
-            msg.role = "tool"; // So that it will still complete
-            msg.kail_hidden = true;
+        if (forcingName) {
+            if (msg.role === "system" || !msg.tool_calls || !msg.tool_calls.length) {
+                /* We were forcing a name and it crashed. Probably the model
+                 * cannot be forced to call a tool. Use a default name and move
+                 * on. */
+                conv.name = conv.name || "Untitled chat";
+                msg.role = "tool"; // So that it will still complete
+                msg.kail_hidden = true;
+            }
         }
 
         await chats.convPush(conv, msg);
