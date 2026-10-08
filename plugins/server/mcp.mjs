@@ -97,7 +97,10 @@ async function mcpTool(req, res) {
         req.on("data", chunk => parts.push(chunk));
         await new Promise(res => req.on("end", res));
         const buf = Buffer.concat(parts);
-        arg = JSON.parse(buf.toString("utf8"));
+        try {
+            arg = JSON.parse(buf.toString("utf8"));
+        }
+        catch (ex) { }
     }
     // Make the call
     const toolRes = await server.client.callTool({

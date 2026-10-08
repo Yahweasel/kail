@@ -140,10 +140,12 @@ export async function dataFixup(conv: iface.Message[]): Promise<iface.Message[]>
     function skipMsg() {
         if (skipCount <= 0)
             return;
+        /*
         ret.push({
             role: "user",
             content: `SYSTEM MESSAGE: ${skipCount} messages have been elided for context room.`
         });
+        */
         skipCount = 0;
     }
 

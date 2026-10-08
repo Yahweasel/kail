@@ -134,7 +134,9 @@ async function mcpTool(req: http.IncomingMessage, res: http.ServerResponse) {
         req.on("data", chunk => parts.push(chunk));
         await new Promise(res => req.on("end", res));
         const buf = Buffer.concat(parts);
-        arg = JSON.parse(buf.toString("utf8"));
+        try {
+            arg = JSON.parse(buf.toString("utf8"));
+        } catch (ex) {}
     }
 
     // Make the call
