@@ -157,22 +157,10 @@ async function lossyConversation(conv) {
  */
 async function dataFixup(conv) {
     const ret = [];
-    let skipCount = 0;
-    function skipMsg() {
-        if (skipCount <= 0)
-            return;
-        ret.push({
-            role: "user",
-            content: `SYSTEM MESSAGE: ${skipCount} messages have been elided for context room.`
-        });
-        skipCount = 0;
-    }
     for (const c of conv) {
         if (c.kail_hidden) {
-            skipCount++;
             continue;
         }
-        skipMsg();
         if (typeof c.content === "string") {
             ret.push(c);
             continue;
@@ -203,7 +191,6 @@ async function dataFixup(conv) {
         }
         ret.push(cc);
     }
-    skipMsg();
     return ret;
 }
 
