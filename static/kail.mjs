@@ -2941,7 +2941,7 @@ async function completeAssistant(conv) {
             if (reqParams)
                 Object.assign(req, JSON.parse(reqParams));
         }
-        const bili = settings.useBili ? "/bili" : "";
+        const bili = settings.useBili.checked ? "/bili" : "";
         // Prepare for stopping
         const abortC = new AbortController();
         stop(() => abortC.abort());

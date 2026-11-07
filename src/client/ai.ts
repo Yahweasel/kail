@@ -276,7 +276,7 @@ async function completeAssistant(conv: iface.Conversation) {
             if (reqParams)
                 Object.assign(req, JSON.parse(reqParams));
         }
-        const bili = ui.settings.useBili ? "/bili" : "";
+        const bili = ui.settings.useBili.checked ? "/bili" : "";
 
 
         // Prepare for stopping
