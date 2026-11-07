@@ -95,6 +95,4 @@ export default [{
     plugin("mcp"),
     plugin("render_svg"),
     plugin("run_js"),
-
-    plugin("oil_canvas"),
 ];

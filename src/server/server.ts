@@ -33,6 +33,7 @@ const CACHE_PATH = "/cache/";
 const PLUGINS_PATH = "/plugins";
 const PLUGIN_LIBS_PATH = "/lib";
 const PROXY_PATH = "/v1/";
+const BILI_PATH = "/bili/";
 const TOOLS_PATH = "/tools/"
 
 /**
@@ -55,7 +56,11 @@ function registerTool(tool: iface.Tool) {
  */
 function toolFunctionProxy(target: string): iface.ToolFunction {
     return function(req: http.IncomingMessage, res: http.ServerResponse) {
-        const targetUrl = new URL(req.url!, target);
+        const targetUrl = new URL(target);
+        if (targetUrl.pathname === "/")
+            targetUrl.pathname = req.url!;
+        else
+            targetUrl.pathname += req.url!;
 
         const proxyReq = http.request(targetUrl, {
             method: req.method,
@@ -102,6 +107,12 @@ for (const file of await fs.readdir("plugins/server")) {
 // Default proxy
 const completionProxy = toolFunctionProxy(config.openai.host);
 
+// bili proxy
+const biliProxy = toolFunctionProxy(
+    (config.bili?.host || "http://localhost:8787") + "/bili/" +
+    config.openai.host
+);
+
 
 // Set up the web server
 const serve = serveStatic(`${process.cwd()}/static`);
@@ -114,6 +125,10 @@ server.on("request", async (req, res) => {
     const url = req.url!;
     if (url.startsWith(PROXY_PATH)) {
         completionProxy(req, res);
+
+    } else if (url.startsWith(BILI_PATH)) {
+        req.url = url.slice(BILI_PATH.length - 1);
+        biliProxy(req, res);
 
     } else if (url.startsWith(`${PLUGINS_PATH}/`)) {
         // Send a client plugin back

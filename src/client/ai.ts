@@ -276,6 +276,7 @@ async function completeAssistant(conv: iface.Conversation) {
             if (reqParams)
                 Object.assign(req, JSON.parse(reqParams));
         }
+        const bili = ui.settings.useBili ? "/bili" : "";
 
 
         // Prepare for stopping
@@ -291,13 +292,13 @@ async function completeAssistant(conv: iface.Conversation) {
             },
             body: JSON.stringify(req)
         };
-        let f = await fetch(`${KAIL.host}/v1/chat/completions`, reqInit);
+        let f = await fetch(`${KAIL.host}${bili}/v1/chat/completions`, reqInit);
 
         if (f.status === 413 /* content too large */) {
             // Try lossy
             req.messages = await proc.lossyConversation(inputMessages);
             reqInit.body = JSON.stringify(req);
-            f = await fetch(`${KAIL.host}/v1/chat/completions`, reqInit);
+            f = await fetch(`${KAIL.host}${bili}/v1/chat/completions`, reqInit);
         }
 
         if (f.status < 200 || f.status >= 300) {
@@ -317,7 +318,7 @@ async function completeAssistant(conv: iface.Conversation) {
             const lines = input.split("\n");
             input = lines.pop()!;
             for (const line of lines) {
-                if (!line || line === ":") continue;
+                if (!line || line[0] === ":") continue;
                 const parts = /^data: *(.*)/.exec(line);
                 if (!parts) {
                     throw Error(
@@ -326,8 +327,12 @@ async function completeAssistant(conv: iface.Conversation) {
                 }
                 if (parts[1][0] === "[") continue;
                 const res = JSON.parse(parts[1]);
-                if (!res.choices || !res.choices[0])
+                if (!res.choices)
                     throw Error(`Invalid data from completion server: ${parts[1]}`);
+                if (!res.choices[0]) {
+                    // This packet just has other metadata
+                    continue;
+                }
                 const delta = res.choices[0].delta;
 
                 // To handle scrolling non-aggressively

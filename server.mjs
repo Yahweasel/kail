@@ -24,11 +24,11 @@ const config = JSON.parse(await fs.readFile("config/config.json", "utf8"));
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-var _a;
+var _a$1;
 /**
  * Cache directory path.
  */
-const cacheDir = ((_a = config.cache) === null || _a === void 0 ? void 0 : _a.dir) || "cache";
+const cacheDir = ((_a$1 = config.cache) === null || _a$1 === void 0 ? void 0 : _a$1.dir) || "cache";
 await fs.mkdir(cacheDir, { recursive: true });
 /**
  * Set this image in the cache. Responds via res.
@@ -122,6 +122,7 @@ async function cacheGet(name, res) {
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+var _a;
 // Global configuration
 const DEFAULT_PORT = 8189;
 const PORT = config.port || DEFAULT_PORT;
@@ -129,6 +130,7 @@ const CACHE_PATH = "/cache/";
 const PLUGINS_PATH = "/plugins";
 const PLUGIN_LIBS_PATH = "/lib";
 const PROXY_PATH = "/v1/";
+const BILI_PATH = "/bili/";
 const TOOLS_PATH = "/tools/";
 /**
  * Tools registered by plugins.
@@ -148,7 +150,11 @@ function registerTool(tool) {
  */
 function toolFunctionProxy(target) {
     return function (req, res) {
-        const targetUrl = new URL(req.url, target);
+        const targetUrl = new URL(target);
+        if (targetUrl.pathname === "/")
+            targetUrl.pathname = req.url;
+        else
+            targetUrl.pathname += req.url;
         const proxyReq = http.request(targetUrl, {
             method: req.method,
             headers: req.headers
@@ -188,6 +194,9 @@ for (const file of await fs.readdir("plugins/server")) {
 }
 // Default proxy
 const completionProxy = toolFunctionProxy(config.openai.host);
+// bili proxy
+const biliProxy = toolFunctionProxy((((_a = config.bili) === null || _a === void 0 ? void 0 : _a.host) || "http://localhost:8787") + "/bili/" +
+    config.openai.host);
 // Set up the web server
 const serve = serveStatic(`${process.cwd()}/static`);
 const pluginsServe = serveStatic(`${process.cwd()}/plugins/client`);
@@ -197,6 +206,10 @@ server.on("request", async (req, res) => {
     const url = req.url;
     if (url.startsWith(PROXY_PATH)) {
         completionProxy(req, res);
+    }
+    else if (url.startsWith(BILI_PATH)) {
+        req.url = url.slice(BILI_PATH.length - 1);
+        biliProxy(req, res);
     }
     else if (url.startsWith(`${PLUGINS_PATH}/`)) {
         // Send a client plugin back

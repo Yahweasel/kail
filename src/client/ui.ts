@@ -166,6 +166,11 @@ export const settings = {
     forceName: <HTMLInputElement> gebi("cfg-force-name")!,
 
     /**
+     * Use bili proxy.
+     */
+    useBili: <HTMLInputElement> gebi("cfg-use-bili")!,
+
+    /**
      * Other request parameters (JSON).
      */
     reqParams: <HTMLTextAreaElement> gebi("cfg-req-parameters")!,

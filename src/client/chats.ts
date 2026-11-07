@@ -288,6 +288,7 @@ onModelChange();
 
 // Other settings
 await settingCheckbox(ui.settings.forceName, "force-name");
+await settingCheckbox(ui.settings.useBili, "use-bili");
 await settingValue(ui.settings.reqParams, "req-parameters");
 await settingCheckbox(ui.settings.toolsEnabled, "tools-enabled");
 

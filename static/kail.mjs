@@ -1869,6 +1869,10 @@ const settings = {
      */
     forceName: gebi("cfg-force-name"),
     /**
+     * Use bili proxy.
+     */
+    useBili: gebi("cfg-use-bili"),
+    /**
      * Other request parameters (JSON).
      */
     reqParams: gebi("cfg-req-parameters"),
@@ -2481,6 +2485,7 @@ if (!settings.model.value)
 onModelChange();
 // Other settings
 await settingCheckbox(settings.forceName, "force-name");
+await settingCheckbox(settings.useBili, "use-bili");
 await settingValue(settings.reqParams, "req-parameters");
 await settingCheckbox(settings.toolsEnabled, "tools-enabled");
 // Add a toggle for a tool
@@ -2936,6 +2941,7 @@ async function completeAssistant(conv) {
             if (reqParams)
                 Object.assign(req, JSON.parse(reqParams));
         }
+        const bili = settings.useBili ? "/bili" : "";
         // Prepare for stopping
         const abortC = new AbortController();
         stop(() => abortC.abort());
@@ -2948,12 +2954,12 @@ async function completeAssistant(conv) {
             },
             body: JSON.stringify(req)
         };
-        let f = await fetch(`${KAIL.host}/v1/chat/completions`, reqInit);
+        let f = await fetch(`${KAIL.host}${bili}/v1/chat/completions`, reqInit);
         if (f.status === 413 /* content too large */) {
             // Try lossy
             req.messages = await lossyConversation(inputMessages);
             reqInit.body = JSON.stringify(req);
-            f = await fetch(`${KAIL.host}/v1/chat/completions`, reqInit);
+            f = await fetch(`${KAIL.host}${bili}/v1/chat/completions`, reqInit);
         }
         if (f.status < 200 || f.status >= 300) {
             let detail = null;
@@ -2976,7 +2982,7 @@ async function completeAssistant(conv) {
                 const lines = input.split("\n");
                 input = lines.pop();
                 for (const line of lines) {
-                    if (!line || line === ":")
+                    if (!line || line[0] === ":")
                         continue;
                     const parts = /^data: *(.*)/.exec(line);
                     if (!parts) {
@@ -2985,8 +2991,12 @@ async function completeAssistant(conv) {
                     if (parts[1][0] === "[")
                         continue;
                     const res = JSON.parse(parts[1]);
-                    if (!res.choices || !res.choices[0])
+                    if (!res.choices)
                         throw Error(`Invalid data from completion server: ${parts[1]}`);
+                    if (!res.choices[0]) {
+                        // This packet just has other metadata
+                        continue;
+                    }
                     const delta = res.choices[0].delta;
                     // To handle scrolling non-aggressively
                     const scrolledToBottom = messages.scrollHeight -
